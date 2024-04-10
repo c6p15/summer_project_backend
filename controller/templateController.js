@@ -42,7 +42,8 @@ const getTemplateById= async (req,res) =>{
         const admin = jwt.verify(authToken, process.env.secret)
         console.log('admin', admin.AID)
 
-        const [checkResult] = await conn.query('SELECT TID, TName, TContent FROM templates WHERE AID = ? AND TID = ? AND TIsDelete = 0', [admin.AID, req.params.TID])
+        const sql = ('SELECT TID, TName, TContent FROM templates WHERE TID =? AND AID =? AND TIsDelete = 0')
+        const [checkResult] = await conn.query(sql , [req.params.TID,admin.AID])
 
         res.json({
             message: 'Show Selected Template Successfully!!',
@@ -92,10 +93,74 @@ const createTemplate = async (req,res) =>{
     }
 }
 
+const updateTemplate = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization']
+        console.log(authHeader)
+        let authToken = ''
+        if (authHeader) {
+            authToken = authHeader.split(' ')[1]
+        }
+        console.log(authToken)
+        const admin = jwt.verify(authToken, process.env.secret)
+        console.log('admin', admin.AID)
+
+        const { TName, TContent } = req.body
+
+        const templateData = {
+            TName,
+            TContent,
+        }
+
+        const sql = 'UPDATE templates SET TName=?, TContent=? WHERE TID=? AND AID=? '
+
+        const [results] = await conn.query(sql, [templateData.TName, templateData.TContent, req.params.TID, admin.AID])
+
+        res.json({
+            message: 'Update Template Successfully!!',
+            template: results
+        })
+    } catch (error) {
+        res.status(403).json({
+            message: 'Update fail :(',
+            error
+        })
+    }
+}
+
+const deleteTemplate = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization']
+        console.log(authHeader)
+        let authToken = ''
+        if (authHeader) {
+            authToken = authHeader.split(' ')[1]
+        }
+        console.log(authToken)
+        const admin = jwt.verify(authToken, process.env.secret)
+        console.log('admin', admin.AID)
+
+        const sql = 'UPDATE templates SET TIsDelete=1 WHERE TID=? AND AID=?'
+
+        const [results] = await conn.query(sql, [req.params.TID, admin.AID])
+
+        res.json({
+            message: 'Delete Template Successfully!!',
+            template: results
+        })
+    } catch (error) {
+        res.status(403).json({
+            message: 'Delete Template fail :(',
+            error
+        })
+    }
+}
 
 module.exports = {
     getTemplates,
     getTemplateById,
     createTemplate,
+    updateTemplate,
+    deleteTemplate,
 
 }

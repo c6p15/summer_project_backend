@@ -91,10 +91,51 @@ const getAdmin = async (req, res) => {
     }
 }
 
+const updateAdmin = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization']
+        console.log(authHeader)
+        let authToken = ''
+        if (authHeader) {
+            authToken = authHeader.split(' ')[1]
+        }
+        console.log(authToken)
+        const admin = jwt.verify(authToken, process.env.secret)
+        console.log('admin', admin.AID)
+
+        const { AEmail, APassword } = req.body
+
+        const [checkResult] = await conn.query('SELECT * FROM admins WHERE AID = ?', admin.AID)
+        if (checkResult.length === 0) {
+            return res.status(404).json({
+                message: 'Admin not found'
+            })
+        }
+
+        let hashedPassword = checkResult[0].APassword
+        if (APassword) {
+            hashedPassword = await bcrypt.hash(APassword, 10)
+        }
+        
+        const sql = 'UPDATE admins SET AEmail=?, APassword=? WHERE AID=?'
+        const [results] = await conn.query(sql, [AEmail, hashedPassword, admin.AID])
+
+        res.json({
+            message: 'Update Admin Successfully!!',
+            template: results
+        })
+    } catch (error) {
+        res.status(403).json({
+            message: 'Authentication fail',
+            error
+        })
+    }
+}
 
 module.exports = {
     register,
     login,
     getAdmin,
+    updateAdmin,
 
 }
