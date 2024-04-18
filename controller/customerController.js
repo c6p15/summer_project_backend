@@ -65,7 +65,7 @@ const createCustomer = async (req, res) => {
 
         res.json({
             message: 'Customer created successfully!',
-            template: results
+            customer: results
         })
     } catch (error) {
         res.status(500).json({
@@ -92,7 +92,7 @@ const updateCustomer = async (req, res) => {
 
         res.json({
             message: 'Customer updated successfully!',
-            template: results
+            customer: results
         })
     } catch (error) {
         res.status(500).json({
@@ -106,13 +106,13 @@ const deleteCustomer = async (req, res) => {
     try {
         const admin = req.admin
 
-        const sql = 'UPDATE customers SET CusIsDelete=1 WHERE CusID=? AND AID=?'
+        const sql = 'UPDATE customers SET CusIsDelete=1 sWHERE CusID=? AND AID=?'
 
         const [results] = await conn.query(sql, [req.params.CusID, admin.AID])
 
         res.json({
             message: 'Customer deleted successfully!',
-            template: results
+            customer: results
         })
     } catch (error) {
         res.status(500).json({
@@ -130,7 +130,7 @@ const getSearchCustomers = async (req,res) => {
 
         res.json({
             message: 'Show search Customers successfully!!',
-            broadcast: checkResult
+            customer: checkResult
         })
     } catch(error) {
         res.status(403).json({

@@ -107,7 +107,7 @@ const updateAdmin = async (req, res) => {
 
         res.json({
             message: 'Update Admin Successfully!!',
-            template: results
+            admin: results
         })
     } catch (error) {
         res.status(403).json({

@@ -64,7 +64,7 @@ const createBroadcast = async (req, res) => {
 
         res.json({
             message: 'Created broadcast successfully!!',
-            template: results,
+            broadcast: results,
             results_Broadcasts_Customers
         });
     } catch (error) {
@@ -97,7 +97,7 @@ const updateBroadcast = async (req, res) => {
 
         res.json({
             message: 'Updated broadcast successfully!!',
-            template: results
+            broadcast: results
         })
     } catch (error) {
         res.status(403).json({
