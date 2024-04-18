@@ -3,35 +3,36 @@ const { register, login, getAdmin, updateAdmin } = require('../controller/adminC
 const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast } = require('../controller/broadcastController')
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate } = require('../controller/templateController')
 const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer } = require('../controller/customerController')
+const Authentication = require('../middleware/authentication')
 const router = express.Router()
 
 // Admin's API
-router.post('/register',register)
-router.post('/login',login)
-router.get('/admin',getAdmin)
-router.put('/admin/:AID',updateAdmin)
+router.post('/register', register)
+router.post('/login', login)
+router.get('/admin', Authentication, getAdmin)
+router.put('/admin/:AID', Authentication, updateAdmin)
 
 // Broadcast's API
-router.get('/broadcasts',getBroadcasts)
-router.get('/broadcasts/:BID',getBroadcastById)
-router.post('/broadcasts',createBroadcast)
-router.put('/broadcasts/:BID',updateBroadcast)
-router.post('/broadcasts/duplicate/:BID',duplicateBroadcast)
-router.put('/broadcasts/delete/:BID',deleteBroadcast)
+router.get('/broadcasts', Authentication, getBroadcasts)
+router.get('/broadcasts/:BID', Authentication, getBroadcastById)
+router.post('/broadcasts', Authentication, createBroadcast)
+router.put('/broadcasts/:BID', Authentication, updateBroadcast)
+router.post('/broadcasts/duplicate/:BID', Authentication, duplicateBroadcast)
+router.put('/broadcasts/delete/:BID', Authentication, deleteBroadcast)
 
 // Template's API
-router.get('/templates',getTemplates)
-router.get('/templates/:TID',getTemplateById)
-router.post('/templates',createTemplate)
-router.put('/templates/:TID',updateTemplate)
-router.put('/templates/delete/:TID',deleteTemplate)
+router.get('/templates',Authentication, getTemplates)
+router.get('/templates/:TID',Authentication, getTemplateById)
+router.post('/templates',Authentication, createTemplate)
+router.put('/templates/:TID',Authentication, updateTemplate)
+router.put('/templates/delete/:TID',Authentication, deleteTemplate)
 
 // Customer's API
-router.get('/customers',getCustomers)
-router.get('/customers/:CusID',getCustomerById)
-router.post('/customers',createCustomer)
-router.put('/customers/:CusID',updateCustomer)
-router.put('/customers/delete/:CusID',deleteCustomer)
+router.get('/customers',Authentication, getCustomers)
+router.get('/customers/:CusID',Authentication, getCustomerById)
+router.post('/customers',Authentication, createCustomer)
+router.put('/customers/:CusID',Authentication, updateCustomer)
+router.put('/customers/delete/:CusID',Authentication, deleteCustomer)
 
 
 module.exports = router

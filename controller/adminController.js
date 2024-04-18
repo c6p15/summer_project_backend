@@ -1,5 +1,5 @@
-require('dotenv').config()
 
+require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 
@@ -15,12 +15,12 @@ const register  = async (req, res) => {
     }
     const [results] = await conn.query('INSERT INTO admins SET ?', adminData)
     res.json({
-        message: 'Register Successfully!!',
+        message: 'Registration Successfully!!',
         results
     })
     }catch(error){
         res.json({
-            message:'Register fail :(',
+            message:'Registration failed :(',
             error
         })
     }
@@ -37,7 +37,7 @@ const login = async (req, res) => {
         const match = await bcrypt.compare(APassword, adminData.APassword)
         if (!match){
             res.status(400).json({
-                message:'Login fail (wrong username, password)'
+                message:'Login failed (incorrect username or password)'
             })
             return false
         }
@@ -50,24 +50,17 @@ const login = async (req, res) => {
         })
 
     }catch(error){
-        res.status(401).json({
-            message:'Login fail :(',
-            error
+        console.error('Login error: ', error)
+        res.status(500).json({
+            message:'Login failed :(',
+            error: error.message
         })        
     }
 }
 
 const getAdmin = async (req, res) => {
     try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const [checkResult] = await conn.query('SELECT * FROM admins WHERE AID = ?', admin.AID)
 
@@ -85,23 +78,15 @@ const getAdmin = async (req, res) => {
 
     }catch(error){
         res.status(403).json({
-            message: 'authentication fail',
-            error
+            message: 'Authentication failed',
+            error: error.message
         })        
     }
 }
 
 const updateAdmin = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const { AEmail, APassword } = req.body
 
@@ -126,7 +111,7 @@ const updateAdmin = async (req, res) => {
         })
     } catch (error) {
         res.status(403).json({
-            message: 'Authentication fail',
+            message: 'Authentication failed',
             error
         })
     }

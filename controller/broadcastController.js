@@ -1,77 +1,44 @@
-
 require('dotenv').config()
-const jwt = require('jsonwebtoken')
-
-
 
 const getBroadcasts = async (req,res) => {
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+    try {
+        const admin = req.admin
 
         const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, Start_BSchedule, End_BSchedule FROM broadcasts WHERE AID = ? AND BIsDelete = 0', admin.AID)
 
         res.json({
-            message: 'Show Broadcasts Successfully!!',            
+            message: 'Show broadcasts successfully!!',
             broadcasts: checkResult
         })
-
-
-    }catch(error){
+    } catch(error) {
         res.status(403).json({
-            message: 'authentication fail',
-            error
+            message: 'Authentication failed',
+            error: error.message
         })        
     }
-
 }
 
 const getBroadcastById = async (req,res) => {
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
-
+    try {
+        const admin = req.admin
 
         const [checkResult] = await conn.query('SELECT BName, BStatus, BTag, Start_BSchedule, End_BSchedule FROM broadcasts WHERE AID = ? AND BID = ? AND BIsDelete = 0', [admin.AID, req.params.BID])
 
         res.json({
-            message: 'Show Selected Broadcast Successfully!!',
+            message: 'Show selected broadcast successfully!!',
             broadcast: checkResult
         })
-
-    }catch(error){
+    } catch(error) {
         res.status(403).json({
-            message: 'authentication fail',
-            error
+            message: 'Authentication failed',
+            error: error.message
         })        
     }
 }
 
 const createBroadcast = async (req,res) =>{
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+    try {
+        const admin = req.admin
 
         const { BName , BStatus, BTag, BFrom, BRecipient, BSubject,TID } = req.body
         const broadcastData ={
@@ -85,33 +52,25 @@ const createBroadcast = async (req,res) =>{
             AID: admin.AID
         }
         
-        const sql = ('INSERT INTO broadcasts (`BName`,`BStatus`,`BTag`,`BFrom`,`BRecipient`, `BSubject`, `TID` ,`AID`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        const sql = 'INSERT INTO broadcasts (BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID ,AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 
         const [results] = await conn.query(sql,[broadcastData.BName, broadcastData.BStatus, broadcastData.BTag, broadcastData.BFrom,broadcastData.BRecipient, broadcastData.BSubject, broadcastData.TID, admin.AID])
 
         res.json({
-            message: 'Create Broadcast Successfully!!',
+            message: 'Created broadcast successfully!!',
             template: results
         })
-    }catch(error){
+    } catch(error) {
         res.status(403).json({
-            message: 'authentication fail',
-            error
+            message: 'Authentication failed',
+            error: error.message
         })
     }
 }
 
 const updateBroadcast = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const { BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID } = req.body
 
@@ -130,28 +89,20 @@ const updateBroadcast = async (req, res) => {
         const [results] = await conn.query(sql, [broadcastData.BName, broadcastData.BStatus, broadcastData.BTag, broadcastData.BFrom, broadcastData.BRecipient, broadcastData.BSubject, broadcastData.TID, req.params.BID, admin.AID])
 
         res.json({
-            message: 'Update Broadcast Successfully!!',
+            message: 'Updated broadcast successfully!!',
             template: results
         })
     } catch (error) {
         res.status(403).json({
-            message: 'authentication fail',
-            error
+            message: 'Authentication failed',
+            error: error.message
         })
     }
 }
 
 const duplicateBroadcast = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const [existingBroadcast] = await conn.query('SELECT * FROM broadcasts WHERE BID = ?', [req.params.BID])
 
@@ -168,44 +119,35 @@ const duplicateBroadcast = async (req, res) => {
         const [results] = await conn.query(sql, [newName, existingBroadcast[0].BStatus, existingBroadcast[0].BTag, existingBroadcast[0].BFrom, existingBroadcast[0].BRecipient, existingBroadcast[0].BSubject, existingBroadcast[0].TID, admin.AID])
 
         res.json({
-            message: 'Duplicate Broadcast Successfully!!',
+            message: 'Duplicated broadcast successfully!!',
             template: results
         })
     } catch (error) {
-        res.json({
-            message: 'Duplicate fail :(',
-            error
+        res.status(403).json({
+            message: 'Duplicate failed :(',
+            error: error.message
         })
     }
 }
 
 const deleteBroadcast = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const sql = 'UPDATE broadcasts SET BIsDelete=1 WHERE BID=? AND AID=?'
         const [results] = await conn.query(sql, [req.params.BID, admin.AID])
 
         res.json({
-            message: 'Delete Broadcast Successfully!!',
+            message: 'Deleted broadcast successfully!!',
             template: results
         })
     } catch (error) {
-        res.json({
-            message: 'Delete fail :(',
-            error
+        res.status(403).json({
+            message: 'Delete failed :(',
+            error: error.message
         })
     }
 }
-
 
 module.exports = {
     getBroadcasts,
@@ -213,6 +155,5 @@ module.exports = {
     createBroadcast,
     updateBroadcast,
     duplicateBroadcast,
-    deleteBroadcast,
-    
+    deleteBroadcast
 }

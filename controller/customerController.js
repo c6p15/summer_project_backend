@@ -1,110 +1,83 @@
+
 require('dotenv').config()
 
-const jwt = require('jsonwebtoken')
+const getCustomers = async (req, res) => {
+    try {
+        const admin = req.admin
 
-const getCustomers = async (req,res) => {
-    try{
-        const authHeader = req.headers['authorization']
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
-
-        const sql = ('SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID =? AND CusIsDelete = 0')
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID = ? AND CusIsDelete = 0'
 
         const [results] = await conn.query(sql, admin.AID)
 
         res.json({
-            message: 'Show Customers Successfully!!',
+            message: 'Show customers successfully!',
             customers: results
         })
-
-    }catch(error){
-        res.status(403).json({
-            message: 'authentication fail',
-            error
-        })        
+    } catch (error) {
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
+        })
     }
 }
 
-const getCustomerById = async (req,res) => {
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+const getCustomerById = async (req, res) => {
+    try {
+        const admin = req.admin
 
-        const sql = ('SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID = ? AND CusID = ? AND CusIsDelete = 0 ')
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID = ? AND CusID = ? AND CusIsDelete = 0'
 
         const [checkResult] = await conn.query(sql, [admin.AID, req.params.CusID])
 
+        if (!checkResult.length) {
+            return res.status(404).json({
+                message: 'Customer not found'
+            })
+        }
+
         res.json({
-            message: 'Show Selected Customer Successfully!!',
+            message: 'Show selected customer successfully!',
             customer: checkResult
         })
-
-    }catch(error){
-        res.status(403).json({
-            message: 'authentication fail',
-            error
+    } catch (error) {
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
         })
     }
 }
 
-const createCustomer = async (req,res) =>{
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+const createCustomer = async (req, res) => {
+    try {
+        const admin = req.admin
 
-        const { CusName , CusEmail, CusLevel } = req.body
-        const cusData ={
+        const { CusName, CusEmail, CusLevel } = req.body
+        const cusData = {
             CusName,
             CusEmail,
             CusLevel,
             AID: admin.AID
         }
-        
-        const sql = ('INSERT INTO customers (`CusName`, `CusEmail`, `CusLevel`, `AID`) VALUES (?, ?, ?, ?)')
 
-        const [results] = await conn.query(sql,[cusData.CusName, cusData.CusEmail, cusData.CusLevel, admin.AID])
+        const sql = 'INSERT INTO customers (CusName, CusEmail, CusLevel, AID) VALUES (?, ?, ?, ?)'
+
+        const [results] = await conn.query(sql, [cusData.CusName, cusData.CusEmail, cusData.CusLevel, admin.AID])
 
         res.json({
-            message: 'Create Customer Successfully!!',
+            message: 'Customer created successfully!',
             template: results
         })
-    }catch(error){
-        res.status(403).json({
-            message: 'authentication fail',
-            error
+    } catch (error) {
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
         })
     }
 }
 
 const updateCustomer = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const { CusName, CusEmail, CusLevel } = req.body
         const cusData = {
@@ -118,41 +91,33 @@ const updateCustomer = async (req, res) => {
         const [results] = await conn.query(sql, [cusData.CusName, cusData.CusEmail, cusData.CusLevel, req.params.CusID, admin.AID])
 
         res.json({
-            message: 'Update Customer Successfully!!',
+            message: 'Customer updated successfully!',
             template: results
         })
     } catch (error) {
-        res.status(403).json({
-            message: 'Authentication fail',
-            error
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
         })
     }
 }
 
 const deleteCustomer = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const sql = 'UPDATE customers SET CusIsDelete=1 WHERE CusID=? AND AID=?'
 
         const [results] = await conn.query(sql, [req.params.CusID, admin.AID])
 
         res.json({
-            message: 'Delete Customer Successfully!!',
+            message: 'Customer deleted successfully!',
             template: results
         })
     } catch (error) {
-        res.status(403).json({
-            message: 'Authentication fail',
-            error
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
         })
     }
 }
@@ -163,6 +128,6 @@ module.exports = {
     getCustomerById,
     createCustomer,
     updateCustomer,
-    deleteCustomer,
+    deleteCustomer
 
 }

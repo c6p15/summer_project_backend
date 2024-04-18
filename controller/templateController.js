@@ -1,93 +1,67 @@
+
 require('dotenv').config()
 
-const jwt = require('jsonwebtoken')
+const getTemplates = async (req, res) => {
+    try {
+        const admin = req.admin
 
-//
-const getTemplates = async (req,res) => {
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
-
-        const [results] = await conn.query('SELECT TID, TName FROM templates WHERE AID =? AND TIsDelete = 0', admin.AID)
+        const [results] = await conn.query('SELECT TID, TName FROM templates WHERE AID = ? AND TIsDelete = 0', admin.AID)
 
         res.json({
-            message: 'Show Templates Successfully!!',
+            message: 'show templates successfully!!',
             templates: results
         })
 
-    }catch(error){
+    } catch (error) {
         res.status(403).json({
-            message: 'authentication fail',
+            message: 'Authentication failed',
             error
         })
     }
 }
 
-const getTemplateById= async (req,res) =>{
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+const getTemplateById = async (req, res) => {
+    try {
+        const admin = req.admin
 
-        const sql = ('SELECT TID, TName, TContent FROM templates WHERE TID =? AND AID =? AND TIsDelete = 0')
-        const [checkResult] = await conn.query(sql , [req.params.TID,admin.AID])
+        const sql = 'SELECT TID, TName, TContent FROM templates WHERE TID = ? AND AID = ? AND TIsDelete = 0'
+        const [checkResult] = await conn.query(sql, [req.params.TID, admin.AID])
 
         res.json({
-            message: 'Show Selected Template Successfully!!',
+            message: 'Show selected template successfully!!',
             template: checkResult
         })
 
-    }catch(error){
+    } catch (error) {
         res.status(403).json({
-            message: 'authentication fail',
+            message: 'Authentication failed',
             error
         })
     }
 }
 
-const createTemplate = async (req,res) =>{
-    try{
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+const createTemplate = async (req, res) => {
+    try {
+        const admin = req.admin
 
-        const { TName , TContent } = req.body
-        const templateData ={
+        const { TName, TContent } = req.body
+        const templateData = {
             TName,
             TContent,
             AID: admin.AID
         }
         
-        const sql = ('INSERT INTO templates (`TName`, `TContent`, `AID`) VALUES (?, ?, ?)')
+        const sql = 'INSERT INTO templates (`TName`, `TContent`, `AID`) VALUES (?, ?, ?)'
 
-        const [results] = await conn.query(sql,[templateData.TName, templateData.TContent, admin.AID])
+        const [results] = await conn.query(sql, [templateData.TName, templateData.TContent, admin.AID])
 
         res.json({
-            message: 'Create Template Successfully!!',
+            message: 'Create template successfully!!',
             template: results
         })
-    }catch(error){
+    } catch (error) {
         res.status(403).json({
-            message: 'authentication fail',
+            message: 'Authentication failed',
             error
         })
     }
@@ -95,15 +69,7 @@ const createTemplate = async (req,res) =>{
 
 const updateTemplate = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const { TName, TContent } = req.body
 
@@ -112,17 +78,17 @@ const updateTemplate = async (req, res) => {
             TContent,
         }
 
-        const sql = 'UPDATE templates SET TName=?, TContent=? WHERE TID=? AND AID=? '
+        const sql = 'UPDATE templates SET TName=?, TContent=? WHERE TID=? AND AID=?'
 
         const [results] = await conn.query(sql, [templateData.TName, templateData.TContent, req.params.TID, admin.AID])
 
         res.json({
-            message: 'Update Template Successfully!!',
+            message: 'Update template successfully!!',
             template: results
         })
     } catch (error) {
         res.status(403).json({
-            message: 'Update fail :(',
+            message: 'Update template failed :(',
             error
         })
     }
@@ -130,27 +96,19 @@ const updateTemplate = async (req, res) => {
 
 const deleteTemplate = async (req, res) => {
     try {
-        const authHeader = req.headers['authorization']
-        console.log(authHeader)
-        let authToken = ''
-        if (authHeader) {
-            authToken = authHeader.split(' ')[1]
-        }
-        console.log(authToken)
-        const admin = jwt.verify(authToken, process.env.secret)
-        console.log('admin', admin.AID)
+        const admin = req.admin
 
         const sql = 'UPDATE templates SET TIsDelete=1 WHERE TID=? AND AID=?'
 
         const [results] = await conn.query(sql, [req.params.TID, admin.AID])
 
         res.json({
-            message: 'Delete Template Successfully!!',
+            message: 'Delete template successfully!!',
             template: results
         })
     } catch (error) {
         res.status(403).json({
-            message: 'Delete Template fail :(',
+            message: 'Delete template failed :(',
             error
         })
     }
@@ -161,6 +119,5 @@ module.exports = {
     getTemplateById,
     createTemplate,
     updateTemplate,
-    deleteTemplate,
-
+    deleteTemplate
 }
