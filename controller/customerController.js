@@ -5,7 +5,7 @@ const getCustomers = async (req, res) => {
     try {
         const admin = req.admin
 
-        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID = ? AND CusIsDelete = 0'
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusIsDelete = 0'
 
         const [results] = await conn.query(sql, admin.AID)
 
@@ -25,7 +25,7 @@ const getCustomerById = async (req, res) => {
     try {
         const admin = req.admin
 
-        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, Start_CusUpdateTime, End_CusUpdateTime FROM customers WHERE AID = ? AND CusID = ? AND CusIsDelete = 0'
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusID = ? AND CusIsDelete = 0'
 
         const [checkResult] = await conn.query(sql, [admin.AID, req.params.CusID])
 
@@ -122,12 +122,31 @@ const deleteCustomer = async (req, res) => {
     }
 }
 
+const getSearchCustomers = async (req,res) => {
+    try {
+        const admin = req.admin
+        //รอรับ Start_CusUpdate และ End_CusUpdate จาก frontend
+        const [checkResult] = await conn.query('SELECT * FROM customers WHERE AID = ? AND CusUpdate BETWEEN $Start_CusUpdate AND $End_CusUpdate ;', [admin.AID])
+
+        res.json({
+            message: 'Show search Customers successfully!!',
+            broadcast: checkResult
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Authentication failed',
+            error: error.message
+        })        
+    }
+}
+
 
 module.exports = {
     getCustomers,
     getCustomerById,
     createCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    getSearchCustomers
 
 }

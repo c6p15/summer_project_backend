@@ -1,8 +1,8 @@
 const express = require('express')
 const { register, login, getAdmin, updateAdmin } = require('../controller/adminController')
-const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast } = require('../controller/broadcastController')
+const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getSearchBroadcasts } = require('../controller/broadcastController')
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate } = require('../controller/templateController')
-const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer } = require('../controller/customerController')
+const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, getSearchCustomers } = require('../controller/customerController')
 const Authentication = require('../middleware/authentication')
 const router = express.Router()
 
@@ -19,6 +19,8 @@ router.post('/broadcasts', Authentication, createBroadcast)
 router.put('/broadcasts/:BID', Authentication, updateBroadcast)
 router.post('/broadcasts/duplicate/:BID', Authentication, duplicateBroadcast)
 router.put('/broadcasts/delete/:BID', Authentication, deleteBroadcast)
+router.get('/broadcasts/search', Authentication, getSearchBroadcasts)
+
 
 // Template's API
 router.get('/templates',Authentication, getTemplates)
@@ -33,6 +35,8 @@ router.get('/customers/:CusID',Authentication, getCustomerById)
 router.post('/customers',Authentication, createCustomer)
 router.put('/customers/:CusID',Authentication, updateCustomer)
 router.put('/customers/delete/:CusID',Authentication, deleteCustomer)
+router.get('/customers/search',Authentication, getSearchCustomers)
+
 
 
 module.exports = router
