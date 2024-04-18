@@ -39,7 +39,6 @@ const getBroadcastById = async (req,res) => {
 const createBroadcast = async (req, res) => {
     try {
         const admin = req.admin;
-
         const { BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
         const broadcastData = {
             BName,
@@ -53,19 +52,63 @@ const createBroadcast = async (req, res) => {
         };
 
         const sql = 'INSERT INTO broadcasts (BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        const [results] = await conn.query(sql, [
+            broadcastData.BName,
+            broadcastData.BStatus,
+            broadcastData.BTag,
+            broadcastData.BFrom,
+            broadcastData.BRecipient,
+            broadcastData.BSubject,
+            broadcastData.TID,
+            admin.AID
+        ]);
+        const insertedBID = results.insertId;
 
-        const [results] = await conn.query(sql, [broadcastData.BName, broadcastData.BStatus, broadcastData.BTag, broadcastData.BFrom, broadcastData.BRecipient, broadcastData.BSubject, broadcastData.TID, admin.AID]);
-
-        const insertedBID = results.insertId; // Get the inserted BID
-
-        const addBroadcasts_Customers = `INSERT INTO broadcast_customer (BID, CusID) SELECT b.BID, c.CusID FROM broadcasts AS b JOIN customers AS c ON (FIND_IN_SET(c.CusLevel, REPLACE(b.BRecipient, '', '')) > 0) OR (TRIM(BOTH '{}' FROM b.BRecipient) = c.CusLevel) WHERE c.AID =? AND b.BID = ? AND c.CusIsDelete = 0 `;
-
-        const [results_Broadcasts_Customers] = await conn.query(addBroadcasts_Customers, [admin.AID , insertedBID]); // Use insertedBID here
+        try {
+            if (broadcastData.BRecipient === 'everyone') {
+                const fetchEveryone = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
+                const [allCustomers] = await conn.query(fetchEveryone, [admin.AID]);
+        
+                for (const customer of allCustomers) {
+                    await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customer.CusID]);
+                }
+            } else if (typeof broadcastData.BRecipient === 'string' && broadcastData.BRecipient.includes(',')) {
+                const levels = broadcastData.BRecipient.split(',').map(level => level.trim());
+        
+                for (const level of levels) {
+                    const fetchByLevel = 'SELECT CusID FROM customers WHERE CusLevel = ? AND AID = ? AND CusIsDelete = 0';
+                    const [customers] = await conn.query(fetchByLevel, [level, admin.AID]);
+        
+                    for (const customer of customers) {
+                        await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customer.CusID]);
+                    }
+                }
+            } else {
+                const fetchEmail = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
+                const [customerResult] = await conn.query(fetchEmail, [broadcastData.BRecipient, admin.AID]);
+        
+                if (customerResult.length > 0) {
+                    await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customerResult[0].CusID]);
+                } else {
+                    res.status(404).json({
+                        message: 'Recipient not found',
+                        error: 'The specified recipient email does not exist in the database.'
+                    });
+                    return;
+                }
+            }
+        } catch (error) {
+            res.status(500).json({
+                message: 'Internal server error',
+                error: error.message
+            });
+            return;
+        }
+        
 
         res.json({
             message: 'Created broadcast successfully!!',
-            broadcast: results,
-            results_Broadcasts_Customers
+            broadcast: results
         });
     } catch (error) {
         res.status(403).json({
@@ -74,6 +117,7 @@ const createBroadcast = async (req, res) => {
         });
     }
 };
+
 
 const updateBroadcast = async (req, res) => {
     try {
