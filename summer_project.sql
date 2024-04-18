@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 18, 2024 at 06:17 AM
+-- Generation Time: Apr 18, 2024 at 04:55 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.0.28
 
@@ -73,12 +73,13 @@ CREATE TABLE `broadcasts` (
 --
 
 INSERT INTO `broadcasts` (`BID`, `BName`, `BStatus`, `BTag`, `BFrom`, `BRecipient`, `BSubject`, `Start_BSchedule`, `End_BSchedule`, `BIsDelete`, `TID`, `AID`) VALUES
-(1, 'Broadcast 1', 'Draft', 'summer_sells', NULL, '{\'Platinum\'}', NULL, '2024-04-05 16:41:06', '2024-04-05 16:41:07', 0, 1, 8),
-(2, 'Broadcast 2', 'Sent', 'winter_sells', NULL, '{\'Gold\'}', NULL, '2024-04-05 16:41:20', '2024-04-05 16:41:20', 0, 2, 1),
-(17, 'Untitle', 'Draft', 'summer_sells', 'Anonymous', '{\'Gold\'}', 'Summer Sells', '2024-04-06 12:11:37', '2024-04-06 12:11:37', 0, 5, 8),
-(18, 'Edit Broadcast from Postman2', 'Draft', 'summer_sells', NULL, '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, 5, 8),
-(21, 'Untitle_duplicate', 'Draft', 'summer_sells', 'Anonymous', '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 5, 8),
-(22, 'Edit Broadcast from Postman2_duplicate', 'Draft', 'summer_sells', NULL, '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 5, 8);
+(1, 'Broadcast 1', 'Draft', 'summer_sells', NULL, 'Platinum, Diamond', NULL, '2024-04-05 16:41:06', '2024-04-05 16:41:07', 0, 1, 8),
+(2, 'Broadcast 2', 'Sent', 'winter_sells', NULL, 'Platinum, Diamond, Gold', NULL, '2024-04-05 16:41:20', '2024-04-05 16:41:20', 0, 2, 1),
+(17, 'Untitle', 'Draft', 'summer_sells', 'Anonymous', 'Gold', 'Summer Sells', '2024-04-06 12:11:37', '2024-04-06 12:11:37', 0, 5, 8),
+(18, 'Edit Broadcast from Postman2', 'Draft', 'summer_sells', NULL, 'Gold', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, 5, 8),
+(21, 'Untitle_duplicate', 'Draft', 'summer_sells', 'Anonymous', 'Gold', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 5, 8),
+(22, 'Edit Broadcast from Postman2_duplicate', 'Draft', 'summer_sells', NULL, 'Gold', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 5, 8),
+(23, 'Edit Broadcast from Postman2_duplicate2', 'Draft', 'summer_sells', NULL, 'Gold,Silver,Diamond', 'Summer Sells', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 5, 8);
 
 -- --------------------------------------------------------
 
@@ -89,15 +90,9 @@ INSERT INTO `broadcasts` (`BID`, `BName`, `BStatus`, `BTag`, `BFrom`, `BRecipien
 CREATE TABLE `broadcast_customer` (
   `BCID` bigint(20) NOT NULL,
   `BID` bigint(20) DEFAULT NULL,
-  `CusID` bigint(20) DEFAULT NULL
+  `CusID` bigint(20) DEFAULT NULL,
+  `BCDateTime` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `broadcast_customer`
---
-
-INSERT INTO `broadcast_customer` (`BCID`, `BID`, `CusID`) VALUES
-(1, 2, 2);
 
 -- --------------------------------------------------------
 
@@ -121,11 +116,11 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`CusID`, `CusName`, `CusEmail`, `CusLevel`, `Start_CusUpdateTime`, `End_CusUpdateTime`, `CusIsDelete`, `AID`) VALUES
-(1, 'Skoon', 'sknowk@gmail.com', 'Gold', '2024-04-05 16:44:11', '2024-04-05 16:44:13', 0, 1),
+(1, 'Skoon', 'sknowk@gmail.com', 'Platinum', '2024-04-05 16:44:11', '2024-04-05 16:44:13', 0, 1),
 (2, 'Chaomop', 'chchamp@gmail.com', 'Platinum', '2024-04-05 16:44:52', '2024-04-05 16:44:53', 0, 1),
 (3, 'Boboss', 'bobob@gmail.com', 'Gold', '2024-04-05 16:45:23', '2024-04-05 16:45:24', 0, 2),
 (11, 'Customer from Postman', 'cusfromPost@gmail.com', 'Diamond', NULL, NULL, 1, 8),
-(12, 'Edit Customer from Postman2', 'cusfromPost@gmail.com', 'Platinum', '2024-04-06 16:34:30', NULL, 1, 8);
+(12, 'Edit Customer from Postman2', 'cusfromPost@gmail.com', 'Silver', '2024-04-06 16:34:30', NULL, 1, 8);
 
 -- --------------------------------------------------------
 
@@ -209,13 +204,13 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `broadcasts`
 --
 ALTER TABLE `broadcasts`
-  MODIFY `BID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `BID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `broadcast_customer`
 --
 ALTER TABLE `broadcast_customer`
-  MODIFY `BCID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `BCID` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `customers`
