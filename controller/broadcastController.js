@@ -37,86 +37,72 @@ const getBroadcastById = async (req,res) => {
 }
 
 const createBroadcast = async (req, res) => {
-    try {
-        const admin = req.admin;
-        const { BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
-        const broadcastData = {
-            BName,
-            BStatus,
-            BTag,
-            BFrom,
-            BRecipient,
-            BSubject,
-            TID,
-            AID: admin.AID
-        };
+try {
+    const { BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
+    const { AID } = req.admin;
 
-        const sql = 'INSERT INTO broadcasts (BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-        const [results] = await conn.query(sql, [
-            broadcastData.BName,
-            broadcastData.BStatus,
-            broadcastData.BTag,
-            broadcastData.BFrom,
-            broadcastData.BRecipient,
-            broadcastData.BSubject,
-            broadcastData.TID,
-            admin.AID
-        ]);
-        const insertedBID = results.insertId;
+    await conn.beginTransaction();
 
-        try {
-            if (broadcastData.BRecipient === 'everyone') {
-                const fetchEveryone = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
-                const [allCustomers] = await conn.query(fetchEveryone, [admin.AID]);
-        
-                for (const customer of allCustomers) {
-                    await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customer.CusID]);
-                }
-            } else if (typeof broadcastData.BRecipient === 'string' && broadcastData.BRecipient.includes(',')) {
-                const levels = broadcastData.BRecipient.split(',').map(level => level.trim());
-        
-                for (const level of levels) {
-                    const fetchByLevel = 'SELECT CusID FROM customers WHERE CusLevel = ? AND AID = ? AND CusIsDelete = 0';
-                    const [customers] = await conn.query(fetchByLevel, [level, admin.AID]);
-        
-                    for (const customer of customers) {
-                        await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customer.CusID]);
-                    }
-                }
-            } else {
-                const fetchEmail = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
-                const [customerResult] = await conn.query(fetchEmail, [broadcastData.BRecipient, admin.AID]);
-        
-                if (customerResult.length > 0) {
-                    await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, customerResult[0].CusID]);
-                } else {
-                    res.status(404).json({
-                        message: 'Recipient not found',
-                        error: 'The specified recipient email does not exist in the database.'
-                    });
-                    return;
-                }
-            }
-        } catch (error) {
-            res.status(500).json({
-                message: 'Internal server error',
-                error: error.message
-            });
-            return;
-        }
-        
+    const sql = 'INSERT INTO broadcasts (BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    const [results] = await conn.query(sql, [BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID]);
+    const insertedBID = results.insertId;
 
-        res.json({
-            message: 'Created broadcast successfully!!',
-            broadcast: results
-        });
-    } catch (error) {
-        res.status(403).json({
-            message: 'Authentication failed',
-            error: error.message
+    let recipientQuery;
+    let recipients;
+    
+    if (BRecipient.toLowerCase() === 'everyone') {
+        recipientQuery = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
+        [recipients] = await conn.query(recipientQuery, [AID]);
+    } else if (BRecipient.includes('@')) {
+        recipientQuery = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
+        [recipients] = await conn.query(recipientQuery, [BRecipient, AID]);
+    } else {
+        const levels = BRecipient.split(',').map(level => level.trim());
+        recipientQuery = 'SELECT CusID FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
+        [recipients] = await conn.query(recipientQuery, [levels, AID]);
+    }
+
+    if (recipients.length === 0) {
+        await conn.rollback();
+        return res.status(404).json({
+            message: 'Recipients not found',
+            error: 'The specified recipients do not exist in the database.',
         });
     }
-};
+
+    for (const recipient of recipients) {
+        await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, recipient.CusID]);
+    }
+
+    const [broadcastCustomers] = await conn.query('SELECT * FROM broadcast_customer WHERE BID = ?', [insertedBID]);
+
+    if (broadcastCustomers.length === 0) {
+        await conn.rollback(); 
+        return res.status(500).json({
+            message: 'Failed to create broadcast',
+            error: 'Failed to create broadcast_customer entries.',
+        });
+    }
+
+    const [createdBroadcast] = await conn.query('SELECT * FROM broadcasts WHERE BID = ?', [insertedBID]);
+
+    await conn.commit();
+
+    res.json({
+        message: 'Created broadcast successfully!!',
+        broadcast: createdBroadcast,
+        broadcastCustomers: broadcastCustomers
+    });
+} catch (error) {
+    await conn.rollback();
+    console.error('Error occurred:', error);
+    res.status(500).json({
+        message: 'Error occurred',
+        error: error.message
+    });
+}
+
+}
 
 
 const updateBroadcast = async (req, res) => {
@@ -217,6 +203,7 @@ const getSearchBroadcasts = async (req,res) => {
         })        
     }
 }
+
 
 module.exports = {
     getBroadcasts,

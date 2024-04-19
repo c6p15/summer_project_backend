@@ -4,6 +4,7 @@ const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, dupli
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate } = require('../controller/templateController')
 const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, getSearchCustomers } = require('../controller/customerController')
 const Authentication = require('../middleware/authentication')
+const { getActivityLogs } = require('../controller/activityLogController')
 const router = express.Router()
 
 // Admin's API
@@ -37,6 +38,7 @@ router.put('/customers/:CusID',Authentication, updateCustomer)
 router.put('/customers/delete/:CusID',Authentication, deleteCustomer)
 router.get('/customers/search',Authentication, getSearchCustomers)
 
-
+// Activity Log's API
+router.get('/activity-log',Authentication,getActivityLogs)
 
 module.exports = router
