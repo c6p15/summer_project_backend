@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 18, 2024 at 05:07 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Generation Time: Apr 19, 2024 at 05:28 PM
+-- Server version: 10.4.28-MariaDB
+-- PHP Version: 8.0.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -73,22 +73,12 @@ CREATE TABLE `broadcasts` (
 --
 
 INSERT INTO `broadcasts` (`BID`, `BName`, `BStatus`, `BTag`, `BFrom`, `BRecipient`, `BSubject`, `BUpdate`, `BIsDelete`, `TID`, `AID`) VALUES
-(1, 'Broadcast 1', 'Draft', 'summer_sells', NULL, '{\'Platinum\'}', NULL, '2024-04-05 16:41:06', 0, 1, 8),
-(2, 'Broadcast 2', 'Sent', 'winter_sells', NULL, '{\'Gold\'}', NULL, '2024-04-05 16:41:20', 0, 2, 1),
-(17, 'Untitle', 'Draft', 'summer_sells', 'Anonymous', '{\'Gold\'}', 'Summer Sells', '2024-04-06 12:11:37', 0, 5, 8),
-(18, 'Edit Broadcast from Postman2', 'Draft', 'summer_sells', NULL, '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
-(21, 'Untitle_duplicate', 'Draft', 'summer_sells', 'Anonymous', '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', 1, 5, 8),
-(22, 'Edit Broadcast from Postman2_duplicate', 'Draft', 'summer_sells', NULL, '{\'Gold\'}', 'Summer Sells', '0000-00-00 00:00:00', 1, 5, 8),
-(24, 'Tour', '', 'Sea', 'champ', 'Gold', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(25, 'TourSong', '', 'Sea', 'champ', 'Gold', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(26, 'TourSam', '', 'Sea', 'champ', 'Gold', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(27, 'TourSee', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(28, 'TourHha', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(29, 'TourHok', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(31, 'TourJed', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(32, 'TourPad', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(33, 'TourKhaw', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10),
-(34, 'TourSib', '', 'Sea', 'champ', 'Gold,Silver', 'Summer Tour', '0000-00-00 00:00:00', 0, 2, 10);
+(128, 'Broadcast Send to everyone test1', '', 'summer_sells', NULL, 'everyone', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
+(129, 'Broadcast Send to champ3@gmail.com test2', '', 'summer_sells', NULL, 'champ3@gmail.com', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
+(130, 'Broadcast Send to gold level test3', '', 'summer_sells', NULL, 'gold', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
+(131, 'Broadcast Send to Silver, Diamond level test3', '', 'summer_sells', NULL, 'Silver, Diamond', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
+(132, 'Broadcast Send to Silver, Diamond, Platinum level ', '', 'summer_sells', NULL, 'Silver, Diamond, Platinum', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8),
+(146, 'Broadcast Send to everyone', '', 'summer_sells', NULL, 'everyone', 'Summer Sells', '0000-00-00 00:00:00', 0, 5, 8);
 
 -- --------------------------------------------------------
 
@@ -98,8 +88,8 @@ INSERT INTO `broadcasts` (`BID`, `BName`, `BStatus`, `BTag`, `BFrom`, `BRecipien
 
 CREATE TABLE `broadcast_customer` (
   `BCID` bigint(20) NOT NULL,
-  `BID` bigint(20) DEFAULT NULL,
-  `CusID` bigint(20) DEFAULT NULL,
+  `BID` bigint(20) NOT NULL,
+  `CusID` bigint(20) NOT NULL,
   `BCDatetime` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -108,22 +98,21 @@ CREATE TABLE `broadcast_customer` (
 --
 
 INSERT INTO `broadcast_customer` (`BCID`, `BID`, `CusID`, `BCDatetime`) VALUES
-(1, 2, 2, '2024-04-18 21:57:58'),
-(2, 28, 1, '2024-04-18 21:57:58'),
-(3, 28, 3, '2024-04-18 21:57:58'),
-(4, 28, 13, '2024-04-18 21:57:58'),
-(5, 28, 15, '2024-04-18 21:57:58'),
-(6, 28, 16, '2024-04-18 21:57:58'),
-(9, 32, 1, '2024-04-18 21:57:58'),
-(10, 32, 3, '2024-04-18 21:57:58'),
-(11, 32, 13, '2024-04-18 21:57:58'),
-(12, 32, 15, '2024-04-18 21:57:58'),
-(13, 32, 16, '2024-04-18 21:57:58'),
-(16, 33, 13, '2024-04-18 21:57:58'),
-(17, 33, 15, '2024-04-18 21:57:58'),
-(18, 33, 16, '2024-04-18 21:57:58'),
-(19, 34, 13, '2024-04-18 21:57:58'),
-(20, 34, 16, '2024-04-18 21:57:58');
+(18, 128, 13, '2024-04-19 21:45:47'),
+(19, 128, 14, '2024-04-19 21:45:47'),
+(20, 128, 16, '2024-04-19 21:45:47'),
+(21, 128, 17, '2024-04-19 21:45:47'),
+(22, 129, 16, '2024-04-19 21:48:54'),
+(23, 130, 13, '2024-04-19 21:49:32'),
+(24, 131, 14, '2024-04-19 21:49:58'),
+(25, 131, 16, '2024-04-19 21:49:58'),
+(26, 132, 14, '2024-04-19 21:50:25'),
+(27, 132, 16, '2024-04-19 21:50:25'),
+(28, 132, 17, '2024-04-19 21:50:25'),
+(29, 146, 13, '2024-04-19 22:11:07'),
+(30, 146, 14, '2024-04-19 22:11:07'),
+(31, 146, 16, '2024-04-19 22:11:07'),
+(32, 146, 17, '2024-04-19 22:11:07');
 
 -- --------------------------------------------------------
 
@@ -151,11 +140,11 @@ INSERT INTO `customers` (`CusID`, `CusName`, `CusEmail`, `CusLevel`, `CusUpdate`
 (3, 'Boboss', 'bobob@gmail.com', 'Gold', '2024-04-05 16:45:23', 0, 2),
 (11, 'Customer from Postman', 'cusfromPost@gmail.com', 'Diamond', NULL, 1, 8),
 (12, 'Edit Customer from Postman2', 'cusfromPost@gmail.com', 'Platinum', '2024-04-06 16:34:30', 1, 8),
-(13, 'Nong', 'champ@gmail.com', 'Gold', '2024-04-18 18:15:06', 0, 10),
-(14, 'Mon', 'champ@gmail.com', 'Diamond', '2024-04-18 18:15:29', 0, 10),
-(15, 'Ui', 'champ@gmail.com', 'Silver', '2024-04-18 18:15:44', 1, 10),
-(16, 'Eww', 'champ@gmail.com', 'Silver', '2024-04-18 18:15:55', 0, 10),
-(17, 'Beam', 'champ@gmail.com', 'Platinum', '2024-04-18 18:16:28', 0, 10);
+(13, 'Nong', 'champ@gmail.com', 'Gold', '2024-04-18 18:15:06', 0, 8),
+(14, 'Mon', 'champ1@gmail.com', 'Diamond', '2024-04-18 18:15:29', 0, 8),
+(15, 'Ui', 'champ2@gmail.com', 'Silver', '2024-04-18 18:15:44', 1, 8),
+(16, 'Eww', 'champ3@gmail.com', 'Silver', '2024-04-18 18:15:55', 0, 8),
+(17, 'Beam', 'champ4@gmail.com', 'Platinum', '2024-04-18 18:16:28', 0, 8);
 
 -- --------------------------------------------------------
 
@@ -239,13 +228,13 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `broadcasts`
 --
 ALTER TABLE `broadcasts`
-  MODIFY `BID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `BID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=147;
 
 --
 -- AUTO_INCREMENT for table `broadcast_customer`
 --
 ALTER TABLE `broadcast_customer`
-  MODIFY `BCID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `BCID` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `customers`
