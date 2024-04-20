@@ -9,7 +9,7 @@ app.use(express.json())
 
 app.use('/', router)
 
-const PORT = process.env.PORT || 6666
+const PORT = process.env.PORT || 25060
 
 app.listen(PORT, async (req, res) =>{
     await db()
