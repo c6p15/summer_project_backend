@@ -1,6 +1,8 @@
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 
+// สร้างไว้ test api
+const secret = 'MySecret'
 
 const Authentication = (req, res, next) => {
   const authHeader = req.headers['authorization']
@@ -11,7 +13,7 @@ const Authentication = (req, res, next) => {
   }
   console.log(authToken)
   try{
-    const admin = jwt.verify(authToken, process.env.secret)
+    const admin = jwt.verify(authToken, secret)
     console.log('admin', admin.AID)
     req.admin = admin
     next()

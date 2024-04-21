@@ -1,3 +1,4 @@
+
 require('dotenv').config()
 
 const getBroadcaststest = async (req,res) => {
@@ -60,8 +61,8 @@ try {
 
     await conn.beginTransaction();
 
-    const sql = 'INSERT INTO broadcasts (BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-    const [results] = await conn.query(sql, [BName, BStatus, BTag, BFrom, BRecipient, BSubject, TID, AID]);
+    const sql = 'INSERT INTO broadcasts (BName, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const [results] = await conn.query(sql, [BName, BTag, BFrom, BRecipient, BSubject, TID, AID]);
     const insertedBID = results.insertId;
 
     let recipientQuery;
@@ -118,7 +119,6 @@ try {
         error: error.message
     });
 }
-
 }
 
 

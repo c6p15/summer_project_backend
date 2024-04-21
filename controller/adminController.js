@@ -1,7 +1,12 @@
 
-require('dotenv').config()
+require('dotenv').config();
+
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
+
+// สร้างไว้ test api
+const secret = 'MySecret'
+
 
 const register  = async (req, res) => {
     try{
@@ -43,9 +48,10 @@ const login = async (req, res) => {
         }
 
         // create token
-        const token = jwt.sign({ AID: adminData.AID }, process.env.secret, {expiresIn: '1h'})
+        const token = jwt.sign({ AID: adminData.AID }, secret, {expiresIn: '1h'})
         res.json({
             message:'Login succesfully!!',
+            secret: secret,
             token
         })
 
