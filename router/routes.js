@@ -1,6 +1,6 @@
 const express = require('express')
 const { register, login, getAdmin, updateAdmin } = require('../controller/adminController')
-const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getSearchBroadcasts } = require('../controller/broadcastController')
+const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getSearchBroadcasts, getBroadcaststest } = require('../controller/broadcastController')
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate } = require('../controller/templateController')
 const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, getSearchCustomers } = require('../controller/customerController')
 const Authentication = require('../middleware/authentication')
@@ -14,6 +14,7 @@ router.get('/admin', Authentication, getAdmin)
 router.put('/admin/:AID', Authentication, updateAdmin)
 
 // Broadcast's API
+router.get('/broadcasts-test', getBroadcaststest)
 router.get('/broadcasts', Authentication, getBroadcasts)
 router.get('/broadcasts/:BID', Authentication, getBroadcastById)
 router.post('/broadcasts', Authentication, createBroadcast)

@@ -1,5 +1,22 @@
 require('dotenv').config()
 
+const getBroadcaststest = async (req,res) => {
+    try {
+
+        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE BIsDelete = 0')
+
+        res.json({
+            message: 'Show broadcasts successfully!!',
+            broadcasts: checkResult
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Authentication failed',
+            error: error.message
+        })        
+    }
+}
+
 const getBroadcasts = async (req,res) => {
     try {
         const admin = req.admin
@@ -212,5 +229,6 @@ module.exports = {
     updateBroadcast,
     duplicateBroadcast,
     deleteBroadcast,
-    getSearchBroadcasts
+    getSearchBroadcasts,
+    getBroadcaststest
 }
