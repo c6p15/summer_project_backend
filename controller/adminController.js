@@ -3,66 +3,89 @@ require('dotenv').config();
 
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
+const { validateEmail, validateUsername, validatePassword} = require('../service/adminValidation')
 
 /*
 // สร้างไว้ test api
 const secret = 'MySecret'
 */
 
-const register  = async (req, res) => {
-    try{
-        const { AEmail, AUsername, APassword } = req.body
-        // hash password with salt
+const register = async (req, res) => {
+    try {
+        const { AEmail, AUsername, APassword } = req.body;
+        
+        if (!validateEmail(AEmail)) {
+            return res.status(400).json({ message: 'Email must contain @ symbol' })
+        }
+
+        if (!validateUsername(AUsername)) {
+            return res.status(400).json({ message: 'Username must be between 4 and 20 characters long' })
+        }
+
+        if (!validatePassword(APassword)) {
+            return res.status(400).json({ message: 'Password must be between 8 and 20 characters long' })
+        }
+
+        // Hash password with salt
         const passwordHash = await bcrypt.hash(APassword, 10)
+        
         const adminData = {
             AEmail,
             AUsername,
             APassword: passwordHash
-    }
-    const [results] = await conn.query('INSERT INTO admins SET ?', adminData)
-    res.json({
-        message: 'Registration Successfully!!',
-        results
-    })
-    }catch(error){
+        }
+
+        const [results] = await conn.query('INSERT INTO admins SET ?', adminData)
+        
         res.json({
-            message:'Registration failed :(',
+            message: 'Registration Successfully!!',
+            results
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: 'Registration failed :(',
             error
         })
     }
 }
 
 const login = async (req, res) => {
-    try{
-        const { AUsername , APassword } = req.body
-        const [results] = await conn.query('SELECT * FROM admins WHERE AUsername = ?', AUsername)
-        const adminData = results[0]
-        console.log(adminData)
+    try {
+        const { AUsername, APassword } = req.body
 
-        // check password match
-        const match = await bcrypt.compare(APassword, adminData.APassword)
-        if (!match){
-            res.status(400).json({
-                message:'Login failed (incorrect username or password)'
-            })
-            return false
+        // Validate username
+        if (!validateUsername(AUsername)) {
+            return res.status(400).json({ message: 'Invalid username format' })
         }
 
-        // create token
-        const token = jwt.sign({ AID: adminData.AID }, process.env.SECRET, {expiresIn: '1h'})
-        res.json({
-            message:'Login succesfully!!',
-            token
-        })
+        // Validate password
+        if (!validatePassword(APassword)) {
+            return res.status(400).json({ message: 'Invalid password format' })
+        }
 
-    }catch(error){
+        const [results] = await conn.query('SELECT * FROM admins WHERE AUsername = ?', AUsername)
+        const adminData = results[0];
+
+        if (!adminData) {
+            return res.status(400).json({ message: 'Login failed (incorrect username or password)' })
+        }
+
+        // Check password match
+        const match = await bcrypt.compare(APassword, adminData.APassword);
+        if (!match) {
+            return res.status(400).json({ message: 'Login failed (incorrect username or password)' })
+        }
+
+        // Create token
+        const token = jwt.sign({ AID: adminData.AID }, process.env.SECRET, { expiresIn: '1h' })
+        res.json({ message: 'Login successfully!!', token })
+
+    } catch (error) {
         console.error('Login error: ', error)
-        res.status(500).json({
-            message:'Login failed :(',
-            error: error.message
-        })        
+        res.status(500).json({ message: 'Login failed :(', error: error.message })
     }
 }
+
 
 const getAllAdmins = async (req, res) => {
     try{
