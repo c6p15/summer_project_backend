@@ -4,14 +4,18 @@ require('dotenv').config()
 const getCustomers = async (req, res) => {
     try {
         const admin = req.admin
+        const { offset, limit, page } = req.pagination;
 
-        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusIsDelete = 0'
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusIsDelete = 0 LIMIT ?, ?'
 
-        const [results] = await conn.query(sql, admin.AID)
+        const [customerResults] = await conn.query(sql, [admin.AID, offset, limit])
 
         res.json({
             message: 'Show customers successfully!',
-            customers: results
+            customers: customerResults,
+            currentPage: page,
+            totalPages: Math.ceil(customerResults.length / limit)
+            
         })
     } catch (error) {
         res.status(500).json({

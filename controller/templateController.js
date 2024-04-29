@@ -4,12 +4,15 @@ require('dotenv').config()
 const getTemplates = async (req, res) => {
     try {
         const admin = req.admin
+        const { offset, limit, page } = req.pagination;
 
-        const [results] = await conn.query('SELECT TID, TName FROM templates WHERE AID = ? AND TIsDelete = 0', admin.AID)
+        const [templateResults] = await conn.query('SELECT TID, TName FROM templates WHERE AID = ? AND TIsDelete = 0 LIMIT ?,?', [admin.AID, offset,limit])
 
         res.json({
             message: 'show templates successfully!!',
-            templates: results
+            templates: templateResults,
+            currentPage: page,
+            totalPages: Math.ceil(templateResults.length / limit)
         })
 
     } catch (error) {

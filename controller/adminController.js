@@ -4,9 +4,10 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 
+/*
 // สร้างไว้ test api
 const secret = 'MySecret'
-
+*/
 
 const register  = async (req, res) => {
     try{
@@ -48,10 +49,9 @@ const login = async (req, res) => {
         }
 
         // create token
-        const token = jwt.sign({ AID: adminData.AID }, secret, {expiresIn: '1h'})
+        const token = jwt.sign({ AID: adminData.AID }, process.env.SECRET, {expiresIn: '1h'})
         res.json({
             message:'Login succesfully!!',
-            secret: secret,
             token
         })
 
@@ -64,22 +64,17 @@ const login = async (req, res) => {
     }
 }
 
-const getAdmin = async (req, res) => {
+const getAllAdmins = async (req, res) => {
     try{
-        const admin = req.admin
+        const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT * FROM admins WHERE AID = ?', admin.AID)
-
-        const adminAttributes ={
-            AID: checkResult[0].AID,
-            AEmail: checkResult[0].AEmail,
-            AUsername: checkResult[0].AUsername,
-
-        }
+        const [adminResult] = await conn.query('SELECT AID, AEmail, AUsername FROM admins LIMIT ?, ?',[offset, limit])
     
         res.json({
             message: 'Show Admin Successfully!!',
-            admin: adminAttributes
+            admin: adminResult,
+            currentPage: page,
+            totalPages: Math.ceil(adminResult.length / limit)
         })
 
     }catch(error){
@@ -126,7 +121,7 @@ const updateAdmin = async (req, res) => {
 module.exports = {
     register,
     login,
-    getAdmin,
+    getAllAdmins,
     updateAdmin,
 
 }

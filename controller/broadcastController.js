@@ -1,32 +1,39 @@
 
 require('dotenv').config()
 
-const getBroadcaststest = async (req,res) => {
+const getBroadcaststest = async (req, res) => {
     try {
+        const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE BIsDelete = 0')
+        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE BIsDelete = 0 LIMIT ?, ?', [offset, limit]);
 
         res.json({
             message: 'Show broadcasts successfully!!',
-            broadcasts: checkResult
-        })
+            broadcasts: checkResult,
+            currentPage: page,
+            totalPages: Math.ceil(checkResult.length / limit), // Calculate total pages based on total results and limit
+        });
     } catch(error) {
         res.status(403).json({
             message: 'Authentication failed',
             error: error.message
-        })        
+        });        
     }
-}
+};
+
 
 const getBroadcasts = async (req,res) => {
     try {
         const admin = req.admin
+        const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE AID = ? AND BIsDelete = 0', admin.AID)
+        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE AID = ? AND BIsDelete = 0 LIMIT ?,?', [admin.AID, offset, limit])
 
         res.json({
             message: 'Show broadcasts successfully!!',
-            broadcasts: checkResult
+            broadcasts: checkResult,
+            currentPage: page,
+            totalPages: Math.ceil(checkResult.length / limit)
         })
     } catch(error) {
         res.status(403).json({
