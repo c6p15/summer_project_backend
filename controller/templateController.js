@@ -1,6 +1,8 @@
 
 require('dotenv').config()
 
+const validateTName = require('../service/templateValidator');
+
 const getTemplates = async (req, res) => {
     try {
         const admin = req.admin
@@ -48,6 +50,11 @@ const createTemplate = async (req, res) => {
         const admin = req.admin
 
         const { TName, TContent } = req.body
+
+        if (validateTName(TName) !== true) {
+            return res.status(400).json({ message: validateTName(TName) })
+        }
+
         const templateData = {
             TName,
             TContent,

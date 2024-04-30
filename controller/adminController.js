@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const { validateEmail, validateUsername, validatePassword} = require('../service/adminValidation')
+const { validateEmail, validateUsername, validatePassword} = require('../service/adminValidator')
 
 /*
 // สร้างไว้ test api
@@ -15,15 +15,15 @@ const register = async (req, res) => {
         const { AEmail, AUsername, APassword } = req.body;
         
         if (!validateEmail(AEmail)) {
-            return res.status(400).json({ message: 'Email must contain @ symbol' })
+            return res.status(400).json({ message: 'Email must include @.' })
         }
 
-        if (!validateUsername(AUsername)) {
-            return res.status(400).json({ message: 'Username must be between 4 and 20 characters long' })
+        if (validateUsername(AUsername) !== true) {
+            return res.status(400).json({ message: validateUsername(AUsername) });
         }
 
-        if (!validatePassword(APassword)) {
-            return res.status(400).json({ message: 'Password must be between 8 and 20 characters long' })
+        if (!validatePassword(APassword) !== true) {
+            return res.status(400).json({ message: validatePassword(APassword) })
         }
 
         // Hash password with salt
