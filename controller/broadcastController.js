@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const { validateName } = require('../service/adminValidator')
+const { validateBName } = require('../service/broadcastValidator')
 
 const getBroadcaststest = async (req, res) => {
     try {
@@ -67,6 +67,10 @@ const createBroadcast = async (req, res) => {
 try {
     const { BName, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
     const { AID } = req.admin;
+
+    if (validateBName(BName) !== true) {
+        return res.status(400).json({ message: validateBName(BName) })
+    }
 
     await conn.beginTransaction();
 
