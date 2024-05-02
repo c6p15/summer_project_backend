@@ -14,17 +14,17 @@ const register = async (req, res) => {
     try {
         const { AEmail, AUsername, APassword } = req.body;
         
-        if (!validateEmail(AEmail)) {
-            return res.status(400).json({ message: 'Email must include @.' })
-        }
+        // if (!validateEmail(AEmail)) {
+        //     return res.status(400).json({ message: 'Email must include @.' })
+        // }
 
-        if (validateUsername(AUsername) !== true) {
-            return res.status(400).json({ message: validateUsername(AUsername) });
-        }
+        // if (validateUsername(AUsername) !== true) {
+        //     return res.status(400).json({ message: validateUsername(AUsername) })
+        // }
 
-        if (!validatePassword(APassword) !== true) {
-            return res.status(400).json({ message: validatePassword(APassword) })
-        }
+        // if (!validatePassword(APassword) !== true) {
+        //     return res.status(400).json({ message: validatePassword(APassword) })
+        // }
 
         // Hash password with salt
         const passwordHash = await bcrypt.hash(APassword, 10)
