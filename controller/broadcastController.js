@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const { validateBName } = require('../service/broadcastValidator')
+const { validateBName } = require('../validator/broadcastValidator')
 
 const getBroadcaststest = async (req, res) => {
     try {

@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const { validateEmail, validateUsername, validatePassword} = require('../service/adminValidator')
+const { validateEmail, validateUsername, validatePassword} = require('../validator/adminValidator')
 
 /*
 // สร้างไว้ test api

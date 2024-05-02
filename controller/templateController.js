@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const validateTName = require('../service/templateValidator');
+const validateTName = require('../validator/templateValidator');
 
 const getTemplates = async (req, res) => {
     try {

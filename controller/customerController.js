@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const { validateCusName, validateCusEmail } =require('../service/customerValidator')
+const { validateCusName, validateCusEmail } =require('../validator/customerValidator')
 
 const getCustomers = async (req, res) => {
     try {
