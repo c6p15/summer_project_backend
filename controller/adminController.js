@@ -3,28 +3,16 @@ require('dotenv').config();
 
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-// const { validateEmail, validateUsername, validatePassword} = require('../../frontend/summer_project/src/validator/adminValidator')
-
-/*
-// สร้างไว้ test api
-const secret = 'MySecret'
-*/
 
 const register = async (req, res) => {
     try {
         const { AEmail, AUsername, APassword } = req.body;
         
-        // if (!validateEmail(AEmail)) {
-        //     return res.status(400).json({ message: 'Email must include @.' })
-        // }
+        const [existingAdmins] = await conn.query('SELECT * FROM admins WHERE AUsername = ?', [ AUsername]);
 
-        // if (validateUsername(AUsername) !== true) {
-        //     return res.status(400).json({ message: validateUsername(AUsername) })
-        // }
-
-        // if (!validatePassword(APassword) !== true) {
-        //     return res.status(400).json({ message: validatePassword(APassword) })
-        // }
+        if (existingAdmins.length > 0) {
+            return res.status(400).json({ message: 'Username already exists.' });
+        }
 
         // Hash password with salt
         const passwordHash = await bcrypt.hash(APassword, 10)
@@ -53,14 +41,6 @@ const login = async (req, res) => {
     try {
         const { AUsername, APassword } = req.body
 
-        // if (!validateUsername(AUsername)) {
-        //     return res.status(400).json({ message: 'Invalid username format' })
-        // }
-
-        // if (!validatePassword(APassword)) {
-        //     return res.status(400).json({ message: 'Invalid password format' })
-        // }
-
         const [results] = await conn.query('SELECT * FROM admins WHERE AUsername = ?', AUsername)
         const adminData = results[0];
 
@@ -86,25 +66,31 @@ const login = async (req, res) => {
 
 
 const getAllAdmins = async (req, res) => {
-    try{
+    try {
         const { offset, limit, page } = req.pagination;
 
-        const [adminResult] = await conn.query('SELECT AID, AEmail, AUsername FROM admins LIMIT ?, ?',[offset, limit])
-    
+        // Query to count total admins
+        const countQuery = 'SELECT COUNT(*) AS totalCount FROM admins';
+        const [countResult] = await conn.query(countQuery);
+        const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
+
+        // Query to fetch paginated results
+        const [adminResult] = await conn.query('SELECT AID, AEmail, AUsername FROM admins LIMIT ?, ?', [offset, limit]);
+
         res.json({
             message: 'Show Admin Successfully!!',
             admin: adminResult,
             currentPage: page,
-            totalPages: Math.ceil(adminResult.length / limit)
-        })
-
-    }catch(error){
+            totalPages: Math.ceil(totalCount / limit) // Calculate total pages based on totalCount
+        });
+    } catch (error) {
         res.status(403).json({
             message: 'Authentication failed',
             error: error.message
-        })        
+        });
     }
-}
+};
+
 
 const updateAdmin = async (req, res) => {
     try {

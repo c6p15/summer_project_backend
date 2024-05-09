@@ -5,27 +5,31 @@ require('dotenv').config()
 
 const getCustomers = async (req, res) => {
     try {
-        const admin = req.admin
+        const admin = req.admin;
         const { offset, limit, page } = req.pagination;
 
-        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusIsDelete = 0 LIMIT ?, ?'
+        // Query to count total customers
+        const countQuery = 'SELECT COUNT(*) AS totalCount FROM customers WHERE AID = ? AND CusIsDelete = 0';
+        const [countResult] = await conn.query(countQuery, [admin.AID]);
+        const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
 
-        const [customerResults] = await conn.query(sql, [admin.AID, offset, limit])
+        // Query to fetch paginated results
+        const sql = 'SELECT CusID, CusName, CusEmail, CusLevel, CusUpdate FROM customers WHERE AID = ? AND CusIsDelete = 0 LIMIT ?, ?';
+        const [customerResults] = await conn.query(sql, [admin.AID, offset, limit]);
 
         res.json({
             message: 'Show customers successfully!',
             customers: customerResults,
             currentPage: page,
-            totalPages: Math.ceil(customerResults.length / limit)
-            
-        })
+            totalPages: Math.ceil(totalCount / limit) // Calculate total pages based on totalCount
+        });
     } catch (error) {
         res.status(500).json({
             message: 'Internal server error',
             error: error.message
-        })
+        });
     }
-}
+};
 
 const getCustomerById = async (req, res) => {
     try {

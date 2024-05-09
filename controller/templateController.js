@@ -5,25 +5,32 @@ require('dotenv').config()
 
 const getTemplates = async (req, res) => {
     try {
-        const admin = req.admin
+        const admin = req.admin;
         const { offset, limit, page } = req.pagination;
 
-        const [templateResults] = await conn.query('SELECT TID, TName FROM templates WHERE AID = ? AND TIsDelete = 0 LIMIT ?,?', [admin.AID, offset,limit])
+        // Query to count total templates
+        const countQuery = 'SELECT COUNT(*) AS totalCount FROM templates WHERE AID = ? AND TIsDelete = 0';
+        const [countResult] = await conn.query(countQuery, [admin.AID]);
+        const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
+
+        // Query to fetch paginated results
+        const [templateResults] = await conn.query('SELECT TID, TName FROM templates WHERE AID = ? AND TIsDelete = 0 LIMIT ?, ?', [admin.AID, offset, limit]);
 
         res.json({
             message: 'show templates successfully!!',
             templates: templateResults,
             currentPage: page,
-            totalPages: Math.ceil(templateResults.length / limit)
-        })
+            totalPages: Math.ceil(totalCount / limit) // Calculate total pages based on totalCount
+        });
 
     } catch (error) {
         res.status(403).json({
             message: 'Authentication failed',
-            error
-        })
+            error: error.message
+        });
     }
-}
+};
+
 
 const getTemplateById = async (req, res) => {
     try {

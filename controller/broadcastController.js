@@ -7,7 +7,13 @@ const getBroadcaststest = async (req, res) => {
     try {
         const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?', [offset, limit]);
+
+        const countQuery = 'SELECT COUNT(*) AS totalCount FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW())';
+        const [countResult] = await conn.query(countQuery);
+        const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
+        
+        const query = 'SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?';
+        const [checkResult] = await conn.query(query, [ offset, limit]);
 
         res.json({
             message: 'Show broadcasts successfully!!',
@@ -20,7 +26,7 @@ const getBroadcaststest = async (req, res) => {
                 ...(broadcast.BSchedule !== null && { BSchedule: broadcast.BSchedule }) // Conditionally include BSchedule if not null
             })),
             currentPage: page,
-            totalPages: Math.ceil(checkResult.length / limit), // Calculate total pages based on total results and limit
+            totalPages: Math.ceil(totalCount / limit), // Calculate total pages based on total results and limit
         });
     } catch(error) {
         res.status(403).json({
@@ -32,10 +38,17 @@ const getBroadcaststest = async (req, res) => {
 
 const getBroadcasts = async (req, res) => {
     try {
-        const admin = req.admin
+        const admin = req.admin;
         const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?', [admin.AID, offset, limit]);
+        // Query to count total records
+        const countQuery = 'SELECT COUNT(*) AS totalCount FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW())';
+        const [countResult] = await conn.query(countQuery, [admin.AID]);
+        const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
+
+        // Query to fetch paginated results
+        const query = 'SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?';
+        const [checkResult] = await conn.query(query, [admin.AID, offset, limit]);
 
         res.json({
             message: 'Show broadcasts successfully!!',
@@ -48,7 +61,7 @@ const getBroadcasts = async (req, res) => {
                 ...(broadcast.BSchedule !== null && { BSchedule: broadcast.BSchedule })
             })),
             currentPage: page,
-            totalPages: Math.ceil(checkResult.length / limit)
+            totalPages: Math.ceil(totalCount / limit) // Calculate total pages based on totalCount
         });
     } catch(error) {
         res.status(403).json({
