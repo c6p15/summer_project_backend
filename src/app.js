@@ -22,3 +22,5 @@ app.listen(PORT, async (req, res) =>{
     await db()
     console.log(`Server is running on http://localhost:${PORT}`)
 })
+
+require('../cron/cronjobs')

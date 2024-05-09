@@ -1,17 +1,24 @@
 
 require('dotenv').config()
 
-const { validateBName } = require('../validator/broadcastValidator')
+// const { validateBName } = require('../../frontend/summer_project/src/validator/broadcastValidator')
 
 const getBroadcaststest = async (req, res) => {
     try {
         const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE BIsDelete = 0 LIMIT ?, ?', [offset, limit]);
+        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?', [offset, limit]);
 
         res.json({
             message: 'Show broadcasts successfully!!',
-            broadcasts: checkResult,
+            broadcasts: checkResult.map(broadcast => ({
+                BID: broadcast.BID,
+                BName: broadcast.BName,
+                BStatus: broadcast.BStatus,
+                BTag: broadcast.BTag,
+                BUpdate: broadcast.BUpdate,
+                ...(broadcast.BSchedule !== null && { BSchedule: broadcast.BSchedule }) // Conditionally include BSchedule if not null
+            })),
             currentPage: page,
             totalPages: Math.ceil(checkResult.length / limit), // Calculate total pages based on total results and limit
         });
@@ -23,27 +30,33 @@ const getBroadcaststest = async (req, res) => {
     }
 };
 
-
-const getBroadcasts = async (req,res) => {
+const getBroadcasts = async (req, res) => {
     try {
         const admin = req.admin
         const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate FROM broadcasts WHERE AID = ? AND BIsDelete = 0 LIMIT ?,?', [admin.AID, offset, limit])
+        const [checkResult] = await conn.query('SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?', [admin.AID, offset, limit]);
 
         res.json({
             message: 'Show broadcasts successfully!!',
-            broadcasts: checkResult,
+            broadcasts: checkResult.map(broadcast => ({
+                BID: broadcast.BID,
+                BName: broadcast.BName,
+                BStatus: broadcast.BStatus,
+                BTag: broadcast.BTag,
+                BUpdate: broadcast.BUpdate,
+                ...(broadcast.BSchedule !== null && { BSchedule: broadcast.BSchedule })
+            })),
             currentPage: page,
             totalPages: Math.ceil(checkResult.length / limit)
-        })
+        });
     } catch(error) {
         res.status(403).json({
             message: 'Authentication failed',
             error: error.message
-        })        
+        });        
     }
-}
+};
 
 const getBroadcastById = async (req,res) => {
     try {
@@ -63,76 +76,74 @@ const getBroadcastById = async (req,res) => {
     }
 }
 
+// add insert BSchedule
+
 const createBroadcast = async (req, res) => {
-try {
-    const { BName, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
-    const { AID } = req.admin;
+    try {
+        const { BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
+        const { AID } = req.admin;
 
-    if (validateBName(BName) !== true) {
-        return res.status(400).json({ message: validateBName(BName) })
-    }
+        if (validateBName(BName) !== true) {
+            return res.status(400).json({ message: validateBName(BName) });
+        }
 
-    await conn.beginTransaction();
+        await conn.beginTransaction();
 
-    const sql = 'INSERT INTO broadcasts (BName, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    const [results] = await conn.query(sql, [BName, BTag, BFrom, BRecipient, BSubject, TID, AID]);
-    const insertedBID = results.insertId;
+        const sql = 'INSERT INTO broadcasts (BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const [results] = await conn.query(sql, [BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, AID]);
+        const insertedBID = results.insertId;
 
-    let recipientQuery;
-    let recipients;
-    
-    if (BRecipient.toLowerCase() === 'everyone') {
-        recipientQuery = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
-        [recipients] = await conn.query(recipientQuery, [AID]);
-    } else if (BRecipient.includes('@')) {
-        recipientQuery = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
-        [recipients] = await conn.query(recipientQuery, [BRecipient, AID]);
-    } else {
-        const levels = BRecipient.split(',').map(level => level.trim());
-        recipientQuery = 'SELECT CusID FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
-        [recipients] = await conn.query(recipientQuery, [levels, AID]);
-    }
+        let broadcastCustomers = [];
 
-    if (recipients.length === 0) {
+        if (BStatus === 'Sent') { // Check if BStatus is 'Sent'
+            let recipientQuery;
+            let recipients;
+
+            if (BRecipient.toLowerCase() === 'everyone') {
+                recipientQuery = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
+                [recipients] = await conn.query(recipientQuery, [AID]);
+            } else if (BRecipient.includes('@')) {
+                recipientQuery = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
+                [recipients] = await conn.query(recipientQuery, [BRecipient, AID]);
+            } else {
+                const levels = BRecipient.split(',').map(level => level.trim());
+                recipientQuery = 'SELECT CusID FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
+                [recipients] = await conn.query(recipientQuery, [levels, AID]);
+            }
+
+            if (recipients.length === 0) {
+                await conn.rollback();
+                return res.status(404).json({
+                    message: 'Recipients not found',
+                    error: 'The specified recipients do not exist in the database.',
+                });
+            }
+
+            for (const recipient of recipients) {
+                await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, recipient.CusID]);
+            }
+
+            [broadcastCustomers] = await conn.query('SELECT * FROM broadcast_customer WHERE BID = ?', [insertedBID]);
+        }
+
+        const [createdBroadcast] = await conn.query('SELECT * FROM broadcasts WHERE BID = ?', [insertedBID]);
+
+        await conn.commit();
+
+        res.json({
+            message: 'Created broadcast successfully!!',
+            broadcast: createdBroadcast,
+            broadcastCustomers: broadcastCustomers
+        });
+    } catch (error) {
         await conn.rollback();
-        return res.status(404).json({
-            message: 'Recipients not found',
-            error: 'The specified recipients do not exist in the database.',
+        console.error('Error occurred:', error);
+        res.status(500).json({
+            message: 'Error occurred',
+            error: error.message
         });
     }
-
-    for (const recipient of recipients) {
-        await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, recipient.CusID]);
-    }
-
-    const [broadcastCustomers] = await conn.query('SELECT * FROM broadcast_customer WHERE BID = ?', [insertedBID]);
-
-    if (broadcastCustomers.length === 0) {
-        await conn.rollback(); 
-        return res.status(500).json({
-            message: 'Failed to create broadcast',
-            error: 'Failed to create broadcast_customer entries.',
-        });
-    }
-
-    const [createdBroadcast] = await conn.query('SELECT * FROM broadcasts WHERE BID = ?', [insertedBID]);
-
-    await conn.commit();
-
-    res.json({
-        message: 'Created broadcast successfully!!',
-        broadcast: createdBroadcast,
-        broadcastCustomers: broadcastCustomers
-    });
-} catch (error) {
-    await conn.rollback();
-    console.error('Error occurred:', error);
-    res.status(500).json({
-        message: 'Error occurred',
-        error: error.message
-    });
-}
-}
+};
 
 
 const updateBroadcast = async (req, res) => {
@@ -216,24 +227,85 @@ const deleteBroadcast = async (req, res) => {
     }
 }
 
-const getSearchBroadcasts = async (req,res) => {
+const getBroadcastsbyDate = async (req,res) => {
     try {
         const admin = req.admin
+        const { offset, limit, page } = req.pagination;
 
-        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BUpdate BETWEEN $Start_BUpdate AND $End_BUpdate ;', [admin.AID])
+        //const Start_BUpdate & End_BUpdate รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BUpdate BETWEEN $Start_BUpdate AND $End_BUpdate LIMIT ?, ? ', [admin.AID, offset, limit])
 
         res.json({
             message: 'Show search Broadcasts successfully!!',
-            broadcast: checkResult
+            broadcast: checkResult,
+            currentPage: page,
+            totalPages: Math.ceil(checkResult.length / limit),
         })
     } catch(error) {
         res.status(403).json({
-            message: 'Authentication failed',
+            message: 'Search Broadcasts Date failed',
             error: error.message
         })        
     }
 }
 
+const getBroadcastsbyStatus = async (req,res) => {
+    try {
+        const admin = req.admin
+        //const SearchBStatus รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BStatus LIKE '%SearchBStatus%' ;', [admin.AID])
+
+        res.json({
+            message: 'Show search Broadcasts Status successfully!!',
+            broadcast: checkResult
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Search Broadcasts Status failed',
+            error: error.message
+        })        
+    }
+}
+
+const getBroadcastsbyTag = async (req,res) => {
+    try {
+        const admin = req.admin
+        //const SearchBTag รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BTag LIKE '%SearchBTag%' ;', [admin.AID])
+
+        res.json({
+            message: 'Show search Broadcasts tag successfully!!',
+            broadcast: checkResult
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Search Broadcasts tag failed',
+            error: error.message
+        })        
+    }
+}
+
+const getBroadcastsbyName = async (req,res) => {
+    try {
+        const admin = req.admin
+        //const SearchBName รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BName LIKE '%SearchBName%' ;', [admin.AID])
+
+        res.json({
+            message: 'Show search Broadcasts name successfully!!',
+            broadcast: checkResult
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Search Broadcasts name failed',
+            error: error.message
+        })        
+    }
+}
 
 module.exports = {
     getBroadcasts,
@@ -242,6 +314,10 @@ module.exports = {
     updateBroadcast,
     duplicateBroadcast,
     deleteBroadcast,
-    getSearchBroadcasts,
+    getBroadcastsbyDate,
+    getBroadcastsbyName,
+    getBroadcastsbyStatus,
+    getBroadcastsbyTag,
+    getBroadcastById,
     getBroadcaststest
 }

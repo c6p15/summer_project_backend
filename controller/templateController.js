@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const validateTName = require('../validator/templateValidator');
+// const validateTName = require('../../frontend/summer_project/src/validator/templateValidator');
 
 const getTemplates = async (req, res) => {
     try {
@@ -124,10 +124,36 @@ const deleteTemplate = async (req, res) => {
     }
 }
 
+const getTemplatesbyName = async (req,res) => {
+    try {
+        const admin = req.admin
+        const { offset, limit, page } = req.pagination;
+
+        //const SearchTName รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM templates WHERE AID = ? AND TName LIKE '%SearchTName%' LIMIT ?, ?', [admin.AID, offset, limit])
+
+        res.json({
+            message: 'Show search Template successfully!!',
+            broadcast: checkResult,
+            currentPage: page,
+            totalPages: Math.ceil(templateResults.length / limit)
+            
+        })
+    } catch(error) {
+        res.status(403).json({
+            message: 'Search Templates failed',
+            error: error.message
+        })        
+    }
+}
+
 module.exports = {
     getTemplates,
     getTemplateById,
     createTemplate,
     updateTemplate,
-    deleteTemplate
+    deleteTemplate,
+    getTemplatesbyName
+
 }

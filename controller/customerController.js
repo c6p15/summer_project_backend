@@ -1,7 +1,7 @@
 
 require('dotenv').config()
 
-const { validateCusName, validateCusEmail } =require('../validator/customerValidator')
+// const { validateCusName, validateCusEmail } =require('../../frontend/summer_project/src/validator/customerValidator')
 
 const getCustomers = async (req, res) => {
     try {
@@ -137,19 +137,23 @@ const deleteCustomer = async (req, res) => {
     }
 }
 
-const getSearchCustomers = async (req,res) => {
+const getCustomersbyName = async (req,res) => {
     try {
         const admin = req.admin
-        //รอรับ Start_CusUpdate และ End_CusUpdate จาก frontend
-        const [checkResult] = await conn.query('SELECT * FROM customers WHERE AID = ? AND CusUpdate BETWEEN $Start_CusUpdate AND $End_CusUpdate ;', [admin.AID])
+        const { offset, limit, page } = req.pagination;
+        //const SearchCusName รับค่าจาก Fronend
+
+        const [checkResult] = await conn.query('SELECT * FROM customers WHERE AID = ? AND CusName LIKE '%SearchCusName%' LIMIT ?,?', [admin.AID, offset, limit])
 
         res.json({
             message: 'Show search Customers successfully!!',
-            customer: checkResult
+            broadcast: checkResult,
+            currentPage: page,
+            totalPages: Math.ceil(customerResults.length / limit)
         })
     } catch(error) {
         res.status(403).json({
-            message: 'Authentication failed',
+            message: 'Search Customers failed',
             error: error.message
         })        
     }
@@ -162,6 +166,6 @@ module.exports = {
     createCustomer,
     updateCustomer,
     deleteCustomer,
-    getSearchCustomers
+    getCustomersbyName
 
 }

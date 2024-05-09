@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const { validateEmail, validateUsername, validatePassword} = require('../validator/adminValidator')
+// const { validateEmail, validateUsername, validatePassword} = require('../../frontend/summer_project/src/validator/adminValidator')
 
 /*
 // สร้างไว้ test api
@@ -53,15 +53,13 @@ const login = async (req, res) => {
     try {
         const { AUsername, APassword } = req.body
 
-        // Validate username
-        if (!validateUsername(AUsername)) {
-            return res.status(400).json({ message: 'Invalid username format' })
-        }
+        // if (!validateUsername(AUsername)) {
+        //     return res.status(400).json({ message: 'Invalid username format' })
+        // }
 
-        // Validate password
-        if (!validatePassword(APassword)) {
-            return res.status(400).json({ message: 'Invalid password format' })
-        }
+        // if (!validatePassword(APassword)) {
+        //     return res.status(400).json({ message: 'Invalid password format' })
+        // }
 
         const [results] = await conn.query('SELECT * FROM admins WHERE AUsername = ?', AUsername)
         const adminData = results[0];
