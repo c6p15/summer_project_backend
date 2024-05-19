@@ -1,8 +1,6 @@
 
 require('dotenv').config()
 
-// const { validateCusName, validateCusEmail } =require('../../frontend/summer_project/src/validator/customerValidator')
-
 const getCustomers = async (req, res) => {
     try {
         const admin = req.admin;
@@ -62,14 +60,6 @@ const createCustomer = async (req, res) => {
         const admin = req.admin
 
         const { CusName, CusEmail, CusLevel } = req.body
-
-        if (validateCusName(CusName) !== true) {
-            return res.status(400).json({ message: validateCusName(CusName) })
-        }
-
-        if (!validateCusEmail(CusEmail)) {
-            return res.status(400).json({ message: 'Email must include @.' })
-        }
 
         const cusData = {
             CusName,

@@ -58,10 +58,6 @@ const createTemplate = async (req, res) => {
 
         const { TName, TContent } = req.body
 
-        if (validateTName(TName) !== true) {
-            return res.status(400).json({ message: validateTName(TName) })
-        }
-
         const templateData = {
             TName,
             TContent,

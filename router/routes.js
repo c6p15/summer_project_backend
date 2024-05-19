@@ -6,6 +6,9 @@ const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCus
 const Authentication = require('../middleware/authentication')
 const { getActivityLogs } = require('../controller/activityLogController')
 const paginateResults = require('../middleware/pagination')
+const { emailSend } = require('../controller/emailController')
+
+
 const router = express.Router()
 
 // Admin's API
@@ -48,5 +51,9 @@ router.get('/customers/search',Authentication, paginateResults, getCustomersbyNa
 
 // Activity Log's API
 router.get('/activity-log',Authentication, paginateResults, getActivityLogs)
+
+// Email Send API
+
+router.post('/send-email',emailSend)
 
 module.exports = router

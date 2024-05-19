@@ -1,8 +1,6 @@
 
 require('dotenv').config()
 
-// const { validateBName } = require('../../frontend/summer_project/src/validator/broadcastValidator')
-
 const getBroadcaststest = async (req, res) => {
     try {
         const { offset, limit, page } = req.pagination;
@@ -95,10 +93,6 @@ const createBroadcast = async (req, res) => {
     try {
         const { BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
         const { AID } = req.admin;
-
-        if (validateBName(BName) !== true) {
-            return res.status(400).json({ message: validateBName(BName) });
-        }
 
         await conn.beginTransaction();
 
