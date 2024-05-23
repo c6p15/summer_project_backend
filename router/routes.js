@@ -1,13 +1,11 @@
 const express = require('express')
 const { register, login, getAllAdmins, updateAdmin } = require('../controller/adminController')
-const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getBroadcaststest, getBroadcastsbyDate, getBroadcastsbyName, getBroadcastsbyStatus, getBroadcastsbyTag } = require('../controller/broadcastController')
+const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getBroadcaststest } = require('../controller/broadcastController')
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate, getTemplatesbyName } = require('../controller/templateController')
 const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, getCustomersbyName } = require('../controller/customerController')
 const Authentication = require('../middleware/authentication')
 const { getActivityLogs } = require('../controller/activityLogController')
 const paginateResults = require('../middleware/pagination')
-const { emailSend } = require('../controller/emailController')
-
 
 const router = express.Router()
 
@@ -25,12 +23,6 @@ router.post('/broadcasts', Authentication, createBroadcast)
 router.put('/broadcasts/:BID', Authentication, updateBroadcast)
 router.post('/broadcasts/duplicate/:BID', Authentication, duplicateBroadcast)
 router.put('/broadcasts/delete/:BID', Authentication, deleteBroadcast)
-router.get('/broadcasts/search', Authentication, paginateResults, getBroadcastsbyDate)
-router.get('/broadcasts/search', Authentication, paginateResults, getBroadcastsbyStatus)
-router.get('/broadcasts/search', Authentication, paginateResults, getBroadcastsbyTag)
-router.get('/broadcasts/search', Authentication, paginateResults, getBroadcastsbyName)
-// add getBy ....
-
 
 // Template's API
 router.get('/templates',Authentication, paginateResults, getTemplates)
@@ -52,8 +44,6 @@ router.get('/customers/search',Authentication, paginateResults, getCustomersbyNa
 // Activity Log's API
 router.get('/activity-log',Authentication, paginateResults, getActivityLogs)
 
-// Email Send API
 
-router.post('/send-email',emailSend)
 
 module.exports = router

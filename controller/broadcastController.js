@@ -1,3 +1,4 @@
+const transporter = require('../config/nodemailerConfig')
 
 require('dotenv').config()
 
@@ -87,8 +88,6 @@ const getBroadcastById = async (req,res) => {
     }
 }
 
-// add insert BSchedule
-
 const createBroadcast = async (req, res) => {
     try {
         const { BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
@@ -100,21 +99,23 @@ const createBroadcast = async (req, res) => {
         const [results] = await conn.query(sql, [BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, AID]);
         const insertedBID = results.insertId;
 
-        let broadcastCustomers = [];
+        if (BStatus === 'Sent') {
 
-        if (BStatus === 'Sent') { // Check if BStatus is 'Sent'
+            const [templateResult] = await conn.query('SELECT TContent FROM templates WHERE TID = ?', [TID]);
+            const templateContent = templateResult[0].TContent;
+
             let recipientQuery;
             let recipients;
 
             if (BRecipient.toLowerCase() === 'everyone') {
-                recipientQuery = 'SELECT CusID FROM customers WHERE AID = ? AND CusIsDelete = 0';
+                recipientQuery = 'SELECT CusID, CusEmail FROM customers WHERE AID = ? AND CusIsDelete = 0';
                 [recipients] = await conn.query(recipientQuery, [AID]);
             } else if (BRecipient.includes('@')) {
-                recipientQuery = 'SELECT CusID FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
+                recipientQuery = 'SELECT CusID, CusEmail FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
                 [recipients] = await conn.query(recipientQuery, [BRecipient, AID]);
             } else {
                 const levels = BRecipient.split(',').map(level => level.trim());
-                recipientQuery = 'SELECT CusID FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
+                recipientQuery = 'SELECT CusID, CusEmail FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
                 [recipients] = await conn.query(recipientQuery, [levels, AID]);
             }
 
@@ -126,21 +127,25 @@ const createBroadcast = async (req, res) => {
                 });
             }
 
+            // Send email to each recipient
             for (const recipient of recipients) {
+                const mailOptions = {
+                    from: BFrom,
+                    to: recipient.CusEmail,
+                    subject: BSubject,
+                    html: templateContent 
+                };
+
+                await transporter.sendMail(mailOptions);
                 await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [insertedBID, recipient.CusID]);
             }
-
-            [broadcastCustomers] = await conn.query('SELECT * FROM broadcast_customer WHERE BID = ?', [insertedBID]);
         }
-
-        const [createdBroadcast] = await conn.query('SELECT * FROM broadcasts WHERE BID = ?', [insertedBID]);
 
         await conn.commit();
 
         res.json({
-            message: 'Created broadcast successfully!!',
-            broadcast: createdBroadcast,
-            broadcastCustomers: broadcastCustomers
+            message: 'Created and sent broadcast successfully!!',
+            broadcastId: insertedBID
         });
     } catch (error) {
         await conn.rollback();
@@ -151,6 +156,7 @@ const createBroadcast = async (req, res) => {
         });
     }
 };
+
 
 
 const updateBroadcast = async (req, res) => {
@@ -234,85 +240,6 @@ const deleteBroadcast = async (req, res) => {
     }
 }
 
-const getBroadcastsbyDate = async (req,res) => {
-    try {
-        const admin = req.admin
-        const { offset, limit, page } = req.pagination;
-
-        //const Start_BUpdate & End_BUpdate รับค่าจาก Fronend
-
-        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BUpdate BETWEEN $Start_BUpdate AND $End_BUpdate LIMIT ?, ? ', [admin.AID, offset, limit])
-
-        res.json({
-            message: 'Show search Broadcasts successfully!!',
-            broadcast: checkResult,
-            currentPage: page,
-            totalPages: Math.ceil(checkResult.length / limit),
-        })
-    } catch(error) {
-        res.status(403).json({
-            message: 'Search Broadcasts Date failed',
-            error: error.message
-        })        
-    }
-}
-
-const getBroadcastsbyStatus = async (req,res) => {
-    try {
-        const admin = req.admin
-        //const SearchBStatus รับค่าจาก Fronend
-
-        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BStatus LIKE '%SearchBStatus%' ;', [admin.AID])
-
-        res.json({
-            message: 'Show search Broadcasts Status successfully!!',
-            broadcast: checkResult
-        })
-    } catch(error) {
-        res.status(403).json({
-            message: 'Search Broadcasts Status failed',
-            error: error.message
-        })        
-    }
-}
-
-const getBroadcastsbyTag = async (req,res) => {
-    try {
-        const admin = req.admin
-        //const SearchBTag รับค่าจาก Fronend
-
-        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BTag LIKE '%SearchBTag%' ;', [admin.AID])
-
-        res.json({
-            message: 'Show search Broadcasts tag successfully!!',
-            broadcast: checkResult
-        })
-    } catch(error) {
-        res.status(403).json({
-            message: 'Search Broadcasts tag failed',
-            error: error.message
-        })        
-    }
-}
-
-const getBroadcastsbyName = async (req,res) => {
-    try {
-        const admin = req.admin
-        //const SearchBName รับค่าจาก Fronend
-
-        const [checkResult] = await conn.query('SELECT * FROM broadcasts WHERE AID = ? AND BName LIKE '%SearchBName%' ;', [admin.AID])
-
-        res.json({
-            message: 'Show search Broadcasts name successfully!!',
-            broadcast: checkResult
-        })
-    } catch(error) {
-        res.status(403).json({
-            message: 'Search Broadcasts name failed',
-            error: error.message
-        })        
-    }
-}
 
 module.exports = {
     getBroadcasts,
@@ -321,10 +248,6 @@ module.exports = {
     updateBroadcast,
     duplicateBroadcast,
     deleteBroadcast,
-    getBroadcastsbyDate,
-    getBroadcastsbyName,
-    getBroadcastsbyStatus,
-    getBroadcastsbyTag,
     getBroadcastById,
     getBroadcaststest
 }
