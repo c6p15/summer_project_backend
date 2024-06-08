@@ -11,7 +11,7 @@ const getBroadcaststest = async (req, res) => {
         const [countResult] = await conn.query(countQuery);
         const totalCount = countResult && countResult.length > 0 ? countResult[0].totalCount : 0;
         
-        const query = 'SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSchedule <= NOW()) LIMIT ?, ?';
+        const query = 'SELECT BID, BName, BStatus, BTag, BUpdate, BSchedule FROM broadcasts WHERE BIsDelete = 0 AND (BSchedule IS NULL OR BSche dule <= NOW()) LIMIT ?, ?';
         const [checkResult] = await conn.query(query, [ offset, limit]);
 
         res.json({
@@ -160,7 +160,7 @@ const getBroadcastById = async (req,res) => {
 
 const createBroadcast = async (req, res) => {
     try {
-        const { BName, BSchedule, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
+        const { BName, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, blacklist = '' } = req.body; // Default to empty string if blacklist is not provided
         const { AID } = req.admin;
 
         let BStatus;
@@ -206,7 +206,18 @@ const createBroadcast = async (req, res) => {
                 return res.status(404).json({ message: 'Recipients not found' });
             }
 
-            for (const recipient of recipients) {
+            // Parse the blacklist into an array if it exists
+            const blacklistArray = blacklist ? blacklist.split(',').map(item => item.trim().toLowerCase()) : [];
+
+            // Filter out blacklisted emails
+            const filteredRecipients = recipients.filter(recipient => !blacklistArray.includes(recipient.CusEmail.toLowerCase()));
+
+            if (!filteredRecipients.length) {
+                await conn.rollback();
+                return res.status(404).json({ message: 'No recipients left after applying the blacklist' });
+            }
+
+            for (const recipient of filteredRecipients) {
                 const mailOptions = {
                     from: `"${BFrom}" <noreply@example.com>`,
                     to: recipient.CusEmail,
@@ -239,10 +250,9 @@ const createBroadcast = async (req, res) => {
     }
 };
 
-
 const updateBroadcast = async (req, res) => {
     try {
-        const { BName, BSchedule, BTag, BFrom, BRecipient, BSubject, TID } = req.body;
+        const { BName, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, blacklist = '' } = req.body; // Default to empty string if blacklist is not provided
         const { AID } = req.admin;
         const { BID } = req.params;
 
@@ -299,7 +309,18 @@ const updateBroadcast = async (req, res) => {
                 return res.status(404).json({ message: 'Recipients not found' });
             }
 
-            for (const recipient of recipients) {
+            // Parse the blacklist into an array if it exists
+            const blacklistArray = blacklist ? blacklist.split(',').map(item => item.trim().toLowerCase()) : [];
+
+            // Filter out blacklisted emails
+            const filteredRecipients = recipients.filter(recipient => !blacklistArray.includes(recipient.CusEmail.toLowerCase()));
+
+            if (!filteredRecipients.length) {
+                await conn.rollback();
+                return res.status(404).json({ message: 'No recipients left after applying the blacklist' });
+            }
+
+            for (const recipient of filteredRecipients) {
                 const mailOptions = {
                     from: `"${BFrom}" <noreply@example.com>`,
                     to: recipient.CusEmail,
@@ -345,73 +366,31 @@ const duplicateBroadcast = async (req, res) => {
 
         const existingBroadcast = existingBroadcastResult[0];
 
-        const [duplicateNameExists] = await conn.query('SELECT COUNT(*) AS count FROM broadcasts WHERE BName = ?', [existingBroadcast.BName]);
-
         let newName = existingBroadcast.BName;
-        if (duplicateNameExists[0].count > 0) {
-            newName = `${existingBroadcast.BName}_duplicate`;
-        }
 
-        // Determine BStatus based on the given conditions
-        let BStatus;
-        if (!existingBroadcast.BName || !existingBroadcast.BTag || !existingBroadcast.BFrom || !existingBroadcast.BRecipient || !existingBroadcast.BSubject || !existingBroadcast.TID) {
-            BStatus = 'Draft';
-        } else if (existingBroadcast.BSchedule) {
-            BStatus = 'Schedule';
-        } else {
-            BStatus = 'Sent';
-        }
+        // Function to generate a new name with numeric suffix if needed
+        const generateNewName = async (baseName, attempt = 1) => {
+            let testName = `${baseName} duplicated ${attempt}`;
+            const [duplicateNameExists] = await conn.query('SELECT COUNT(*) AS count FROM broadcasts WHERE BName = ?', [testName]);
+
+            if (duplicateNameExists[0].count > 0) {
+                return generateNewName(baseName, attempt + 1);
+            }
+
+            return testName;
+        };
+
+        // Generate new name if the existing one already exists
+        newName = await generateNewName(existingBroadcast.BName);
+
+        // Set BStatus to 'Draft'
+        const BStatus = 'Draft';
 
         await conn.beginTransaction();
 
         const sql = 'INSERT INTO broadcasts (BName, BStatus, BSchedule, BTag, BFrom, BRecipient, BSubject, TID, AID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
         const [results] = await conn.query(sql, [newName, BStatus, existingBroadcast.BSchedule, existingBroadcast.BTag, existingBroadcast.BFrom, existingBroadcast.BRecipient, existingBroadcast.BSubject, existingBroadcast.TID, AID]);
         const newBID = results.insertId;
-
-        if (BStatus === 'Sent') {
-            const [templateResult] = await conn.query('SELECT TContent FROM templates WHERE TID = ?', [existingBroadcast.TID]);
-            const templateContent = templateResult[0]?.TContent;
-
-            if (!templateContent) {
-                await conn.rollback();
-                return res.status(404).json({ message: 'Template not found' });
-            }
-
-            let recipientsQuery, recipients;
-
-            if (existingBroadcast.BRecipient.toLowerCase() === 'everyone') {
-                recipientsQuery = 'SELECT CusID, CusEmail FROM customers WHERE AID = ? AND CusIsDelete = 0';
-                [recipients] = await conn.query(recipientsQuery, [AID]);
-            } else if (existingBroadcast.BRecipient.includes('@')) {
-                recipientsQuery = 'SELECT CusID, CusEmail FROM customers WHERE CusEmail = ? AND AID = ? AND CusIsDelete = 0';
-                [recipients] = await conn.query(recipientsQuery, [existingBroadcast.BRecipient, AID]);
-            } else {
-                const levels = existingBroadcast.BRecipient.split(',').map(level => level.trim());
-                recipientsQuery = 'SELECT CusID, CusEmail FROM customers WHERE CusLevel IN (?) AND AID = ? AND CusIsDelete = 0';
-                [recipients] = await conn.query(recipientsQuery, [levels, AID]);
-            }
-
-            if (!recipients.length) {
-                await conn.rollback();
-                return res.status(404).json({ message: 'Recipients not found' });
-            }
-
-            for (const recipient of recipients) {
-                const mailOptions = {
-                    from: `"${existingBroadcast.BFrom}" <noreply@example.com>`,
-                    to: recipient.CusEmail,
-                    subject: existingBroadcast.BSubject,
-                    html: templateContent
-                };
-
-                try {
-                    await transporter.sendMail(mailOptions);
-                    await conn.query('INSERT INTO broadcast_customer (BID, CusID) VALUES (?, ?)', [newBID, recipient.CusID]);
-                } catch (emailError) {
-                    console.error('Email send error:', emailError);
-                }
-            }
-        }
 
         await conn.commit();
 
@@ -428,7 +407,6 @@ const duplicateBroadcast = async (req, res) => {
         });
     }
 };
-
 
 const deleteBroadcast = async (req, res) => {
     try {
@@ -449,6 +427,34 @@ const deleteBroadcast = async (req, res) => {
     }
 }
 
+const getBTags = async (req, res) => {
+    try {
+        const admin = req.admin;
+        const { selectedTag } = req.query; // Get selectedTag from query parameters
+
+        // Initialize base query and parameters
+        let sql = 'SELECT DISTINCT BTag FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND ';
+        const params = [admin.AID];
+
+        // Add condition if selectedTag is provided
+        if (selectedTag) {
+            sql += ' AND BTag LIKE ?';
+            params.push(`%${selectedTag}%`);
+        }
+
+        const [checkResult] = await conn.query(sql, params, [admin.AID] );
+
+        res.json({
+            message: 'Show Tags successfully!!',
+            BTags: checkResult,
+        });
+    } catch (error) {
+        res.status(403).json({
+            message: 'Show Tags failed',
+            error: error.message,
+        });
+    }
+};
 
 module.exports = {
     getBroadcasts,
@@ -458,5 +464,6 @@ module.exports = {
     duplicateBroadcast,
     deleteBroadcast,
     getBroadcastById,
-    getBroadcaststest
+    getBroadcaststest,
+    getBTags
 }

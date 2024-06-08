@@ -43,7 +43,7 @@ cron.schedule('0 0 * * *', async () => {
             // Send email to each recipient
             for (const recipient of recipients) {
                 const mailOptions = {
-                    from: broadcast.BFrom,
+                    from: `"${broadcast.BFrom}" <noreply@example.com>`,
                     to: recipient.CusEmail,
                     subject: broadcast.BSubject,
                     html: templateContent // Use the template content for email body

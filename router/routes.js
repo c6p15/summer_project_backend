@@ -1,6 +1,6 @@
 const express = require('express')
 const { register, login, getAllAdmins, updateAdmin } = require('../controller/adminController')
-const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getBroadcaststest } = require('../controller/broadcastController')
+const { getBroadcasts, getBroadcastById, createBroadcast, updateBroadcast, duplicateBroadcast, deleteBroadcast, getBroadcaststest, getBTags } = require('../controller/broadcastController')
 const { getTemplates, getTemplateById, createTemplate, updateTemplate, deleteTemplate, getTemplatesbyName } = require('../controller/templateController')
 const { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, getCustomersbyName } = require('../controller/customerController')
 const Authentication = require('../middleware/authentication')
@@ -23,6 +23,7 @@ router.post('/broadcasts', Authentication, createBroadcast)
 router.put('/broadcasts/:BID', Authentication, updateBroadcast)
 router.post('/broadcasts/duplicate/:BID', Authentication, duplicateBroadcast)
 router.put('/broadcasts/delete/:BID', Authentication, deleteBroadcast)
+router.get('/filtertags', Authentication, getBTags)
 
 // Template's API
 router.get('/templates',Authentication, paginateResults, getTemplates)
