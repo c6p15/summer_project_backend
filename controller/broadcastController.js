@@ -427,31 +427,32 @@ const deleteBroadcast = async (req, res) => {
     }
 }
 
-const getBTags = async (req, res) => {
+const getBTagsforFilter = async (req, res) => {
     try {
         const admin = req.admin;
-        const { selectedTag } = req.query; // Get selectedTag from query parameters
+        const selectedTag = req.query.selectedTag;
 
-        // Initialize base query and parameters
-        let sql = 'SELECT DISTINCT BTag FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND ';
+        // เริ่มต้น query พื้นฐาน
+        let sql = `SELECT DISTINCT BTag FROM broadcasts WHERE AID = ? AND BIsDelete = 0 AND BTag IS NOT NULL AND BTag != ''`;
         const params = [admin.AID];
 
-        // Add condition if selectedTag is provided
+        // เพิ่มเงื่อนไข selectedTag หากมี
         if (selectedTag) {
             sql += ' AND BTag LIKE ?';
             params.push(`%${selectedTag}%`);
         }
 
-        const [checkResult] = await conn.query(sql, params, [admin.AID] );
+        const [checkResult] = await conn.query(sql, params);
 
         res.json({
             message: 'Show Tags successfully!!',
             BTags: checkResult,
         });
     } catch (error) {
+        console.error('Error:', error); // log เพื่อดู error
         res.status(403).json({
             message: 'Show Tags failed',
-            error: error.message,
+            error: error.message
         });
     }
 };
@@ -465,5 +466,5 @@ module.exports = {
     deleteBroadcast,
     getBroadcastById,
     getBroadcaststest,
-    getBTags
+    getBTagsforFilter
 }
